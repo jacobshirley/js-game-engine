@@ -46,24 +46,24 @@ function main() {
         var light;
 
         light = new THREE.DirectionalLight(0xdfebff, 1.75);
-        light.position.set(0, 3000, 0);
+        light.position.set(1000, 3000, 1000);
         light.position.multiplyScalar(1.3);
 
         light.castShadow = true;
         light.shadowCameraVisible = true;
 
-        light.shadowMapWidth = 512 * 4;
-        light.shadowMapHeight = 512 * 4;
+        light.shadowMapWidth = 512 * 8;
+        light.shadowMapHeight = 512 * 8;
 
-        var d = 5000;
+        var d = 10000;
 
         light.shadowCameraLeft = -d;
         light.shadowCameraRight = d;
         light.shadowCameraTop = d;
         light.shadowCameraBottom = -d;
 
-        light.shadowCameraFar = 5000;
-        light.shadowDarkness = 0.2;
+        light.shadowCameraFar = 10000;
+        light.shadowDarkness = 0.5;
 
         scene.add(light);
 
@@ -140,7 +140,7 @@ function main() {
     }
 
     function createBox(x, y, z, xRot, yRot, zRot) {
-        var width = 100;
+        var width = 500/3;
         var height = 500;
         var length = 50;
 
@@ -151,7 +151,11 @@ function main() {
         var sideTransform = new Ammo.btTransform();
         sideTransform.setIdentity();
         sideTransform.setOrigin(new Ammo.btVector3(x, y, z));
-        sideTransform.setRotation(new Ammo.btQuaternion(xRot, yRot, zRot, 1));
+
+        var quat = new Ammo.btQuaternion();
+        quat.setEulerZYX(zRot, yRot, xRot);
+        sideTransform.setRotation(quat);
+        
 
         var mass = 5;
         var isDynamic = mass !== 0;
@@ -192,12 +196,23 @@ function main() {
     })();
 
     (function() {
-        var b1 = createBox(20, 1010, -100, 0, 0, 0);
-        //var b2 = createBox(20, 10, 0, 0, 0, 0);
+      var w = (500/1.5);
+        for (var i = 0; i < 3*20; i++) {
+          var mod = Math.floor(i/3);
+          var height = mod*100;
+          console.log(i+", "+height);
 
-        b1.setAngularVelocity(new Ammo.btVector3(0, 0, 0.2));
-
-        blocks.push(b1.mesh);
+          var b1;
+          console.log((mod % 2 == 1))
+          if (mod % 2 == 1) {
+            b1 = createBox(-w+((i%3)*w), -500+height, w, (Math.PI/2), 0, 0);
+          } else {
+            b1 = createBox(0, -500+height, (i%3)*w, (Math.PI/2), (Math.PI/2), 0);
+          }
+          //console.log(b1);
+          //b1.setAngularVelocity(new Ammo.btVector3(0, 0, 0.2));
+          blocks.push(b1.mesh);
+        }
     })();
 
     $(window).keydown(function(ev) {
@@ -358,7 +373,7 @@ function main() {
 
 
                     var setting = hinge.get_m_setting();
-                    setting.set_m_impulseClamp(120);
+                    //setting.set_m_impulseClamp(120);
                     setting.set_m_tau(0.001);
 
                     //body.applyForce(new Ammo.btVector3(10, 0, 0));
