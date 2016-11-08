@@ -49,6 +49,7 @@ function main() {
     var floor = new Block(props);
     world.addObject(floor);
 
+    //code for jenga
     var w = (500/1.5);
     for (var i = 0; i < 3*20; i++) {
         var mod = Math.floor(i/3);
@@ -66,6 +67,25 @@ function main() {
         }
         world.addObject(new Block(props));
     }
+
+    var RADIAN = 2*Math.PI;
+
+    for (var i = 0; i < 30; i++) {
+        var props = {size: {width: 500/3, height: 500, length: 50},
+                    color: 0xFFFFFF, mass:10};
+
+        props.position = {x: Math.random()*300, y: Math.random()*300, z: Math.random()*300};
+        props.rotation = {x: Math.random()*RADIAN, y: Math.random()*RADIAN, z: Math.random()*RADIAN};
+
+        //world.addObject(new Block(props));
+    }
+
+    var props = {size: {radius: 200},
+                    color: 0xFFFFFF, mass:50};
+
+    props.position = {x: 700, y: 300, z: 300};
+    
+    //world.addObject(new Ball(props));
 
     function animate() {
         requestAnimationFrame(animate);

@@ -1,5 +1,6 @@
 function Picker(renderer, physics) {
 	this.enabled = false;
+	this.enableFloorDragging = true;
 
 	this._mouse = { x: 0, y: 0, down: false, held: false, up: false, moved: false };
 
@@ -101,8 +102,11 @@ Picker.prototype.update = function() {
 	            var intersection = new THREE.Vector3();
 
 	            if (raycaster.ray.intersectPlane(this.draggingPlane, intersection)) {
-	                var newInt = new THREE.Vector3();
+	                /*var newInt = new THREE.Vector3();
 	                newInt.copy(intersection);
+	                if (enableFloorDragging) {
+
+	                }
 	                /*var localPos = floorMesh.worldToLocal(newInt);
 
 	                var X = 5000;
