@@ -165,7 +165,7 @@ function main() {
         var body = new Ammo.btRigidBody(rbInfo);
         body.setDamping(0, 0.2);
         body.setActivationState(4);
-        //body.setFriction(1);
+        body.setFriction(0.6);
 
         dynamicsWorld.addRigidBody(body);
         bodies.push(body);
@@ -223,8 +223,8 @@ function main() {
     });
 
     function inRange(x, min, max) {
-            return x >= min && x <= max;
-        }
+        return x >= min && x <= max;
+    }
 
     var mouseVelX = 0;
     var mouseVelY = 0;
@@ -422,7 +422,7 @@ function main() {
         }//*/
         //if (SELECTED != null) 
         //SELECTED.body.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
-        dynamicsWorld.stepSimulation(1, 10);
+        dynamicsWorld.stepSimulation(2, 10);
 
 
         bodies.forEach(function(body) {
