@@ -24,13 +24,9 @@ function main() {
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100000);
-        camera.position.x = 1200;
+        camera.position.x = 2000;
         camera.position.y = 1000;
-        camera.lookAt({
-            x: 0,
-            y: 0,
-            z: 0
-        });
+        camera.position.z = 2000;
 
         controls = new THREE.OrbitControls(camera);
         controls.staticMoving = true;
@@ -157,7 +153,7 @@ function main() {
         sideTransform.setRotation(quat);
         
 
-        var mass = 5;
+        var mass = 2;
         var isDynamic = mass !== 0;
         var localInertia = new Ammo.btVector3(0, 0, 0);
 
