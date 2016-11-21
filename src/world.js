@@ -24,17 +24,24 @@ World.prototype.addObject = function(object) {
     this.physics.addObject(object);
 }
 
-World.prototype.update = function() {
+World.prototype.removeAll = function(destroy) {
+    this.physics.removeAll(destroy);
+    this.renderer.removeAll();
+
+    this.objects = [];
+}
+
+World.prototype.update = function(speed) {
     this.picker.update();
 
-    this.physics.update();
+    this.physics.update(speed);
 
     this.objects.forEach(function(obj) {
         body = obj.physicsData.body;
         mesh = obj.renderData.mesh;
-
-        if (body.getMotionState()) {
-            body.getMotionState().getWorldTransform(_trans);
+        var mS = body.getMotionState();
+        if (mS) {
+            mS.getWorldTransform(_trans);
 
             var origin = _trans.getOrigin();
             var rotation = _trans.getRotation();

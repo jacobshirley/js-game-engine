@@ -36,6 +36,8 @@ Physics.prototype.destroy = function() {
     this.objects.forEach(function(obj) {
     	Ammo.destroy(obj);
     });
+
+    this.objects = [];
 }
 
 Physics.prototype.addObject = function(obj) {
@@ -44,6 +46,85 @@ Physics.prototype.addObject = function(obj) {
 	this.dynamicsWorld.addRigidBody(obj.physicsData.body);
 }
 
-Physics.prototype.update = function() {
-	this.dynamicsWorld.stepSimulation(1, 10);
+Physics.prototype.setAllObjectProps = function(props) {
+	var objects = this.objects;
+	props.forEach(function(prop) {
+        var body = objects[prop.index];
+
+        var aVel = prop.aVel;
+        var lVel = prop.lVel;
+
+        var pos = prop.pos;
+        var rot = prop.rot;
+
+        _trans3 = body.getWorldTransform();
+        //body.getMotionState().getWorldTransform(_trans3);  
+        
+        _trans3.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+        var rows = rot;
+        var matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
+                                      rows[1].x, rows[1].y, rows[1].z,
+                                      rows[2].x, rows[2].y, rows[2].z);
+
+        _trans3.setBasis(matrix);
+
+        body.setAngularVelocity(new Ammo.btVector3(aVel.x, aVel.y, aVel.z));
+        body.setLinearVelocity(new Ammo.btVector3(lVel.x, lVel.y, lVel.z));
+	});
+}
+
+var _trans3 = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
+
+Physics.prototype.getAllObjectProps = function() {
+	var props = [];
+	var c = 0;
+
+	this.objects.forEach(function(body) {
+        var aVel = body.getAngularVelocity();
+        var lVel = body.getLinearVelocity();
+
+        _trans3 = body.getWorldTransform();
+        //body.getMotionState().getWorldTransform(_trans3);  
+
+        var origin = _trans3.getOrigin();
+        var rotation = _trans3.getRotation();
+
+        var basis = _trans3.getBasis();
+        var rows = [];
+        for (var i = 0; i < 3; i++) {
+            var row = basis.getRow(i);
+            rows.push({x: row.x(), y: row.y(), z: row.z()});
+        }
+
+        /*var matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
+                                      rows[1].x, rows[1].y, rows[1].z,
+                                      rows[2].x, rows[2].y, rows[2].z);*/
+
+        var pos = {x: origin.x(), y: origin.y(), z: origin.z()};
+        var rot = rows;
+
+		props.push({index: c, 
+                     pos: pos,
+                     rot: rot,
+                     aVel: {x: aVel.x(), y: aVel.y(), z: aVel.z()}, 
+                     lVel: {x: lVel.x(), y: lVel.y(), z: lVel.z()}
+                   });
+		c++;
+	});
+
+	return props;
+}
+
+Physics.prototype.removeAll = function(destroy) {
+    var world = this.dynamicsWorld;
+    this.objects.forEach(function (obj) {
+        world.removeRigidBody(obj);
+        if (destroy)
+            Ammo.destroy(obj);
+    });
+    this.objects = [];
+}
+
+Physics.prototype.update = function(speed) {
+	this.dynamicsWorld.stepSimulation(speed, 7);
 }

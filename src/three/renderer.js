@@ -12,6 +12,8 @@ function Renderer() {
 }
 
 Renderer.prototype.init = function() {
+	this.meshes = [];
+
 	this.raycaster = new THREE.Raycaster();
 	this.scene = new THREE.Scene();
 
@@ -34,9 +36,11 @@ Renderer.prototype.destroy = function() {
 
 Renderer.prototype.addObject = function(object) {
 	if (object instanceof THREE.Light) {
-		this.scene.add(object)
-	} else
+		this.scene.add(object);
+	} else {
+		this.meshes.push(object.renderData.mesh);
 		this.scene.add(object.renderData.mesh);
+	}
 }
 
 Renderer.prototype.removeObject = function(object) {
@@ -58,7 +62,7 @@ Renderer.prototype.setCamera = function(camera) {
 
 Renderer.prototype.createOrbitControls = function() {
 	this.orbitControls = new THREE.OrbitControls(this.camera);
-    this.orbitControls.staticMoving = true;
+    this.orbitControls.enableDamping = false;
     this.orbitControls.maxPolarAngle = Math.PI / 2;
 }
 
@@ -68,6 +72,14 @@ Renderer.prototype.getOrbitControls = function() {
 
 Renderer.prototype.destroyOrbitControls = function() {
 	this.orbitControls = null;
+}
+
+Renderer.prototype.removeAll = function() {
+	var scene = this.scene;
+	this.meshes.forEach(function (child) {
+		scene.remove(child);
+	});
+	//scene.children = [];
 }
 
 Renderer.prototype.render = function() {

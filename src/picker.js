@@ -1,6 +1,7 @@
 function Picker(renderer, physics) {
 	this.enabled = false;
 	this.enableFloorDragging = true;
+	this.justFinished = false;
 
 	this._mouse = { x: 0, y: 0, down: false, held: false, up: false, moved: false };
 
@@ -36,6 +37,26 @@ function Picker(renderer, physics) {
 
     this.draggingPlane = new THREE.Plane();
     this.draggingHandle = null;
+
+    this.floor = null;
+
+    this.client = null;
+}
+
+Picker.prototype.setClient = function (client) {
+	this.client = client;
+}
+
+Picker.prototype.setFloor = function (floor) {
+	this.floor = floor.renderData.mesh;
+}
+
+Picker.prototype.removeFloor = function () {
+	this.floor = null;
+}
+
+function inRange(x, min, max) {
+	return x >= min && x <= max;
 }
 
 Picker.prototype.update = function() {
@@ -44,14 +65,20 @@ Picker.prototype.update = function() {
 	        this._mouse.up = false;
 	        if (this.selected) {
 	            this._mouse.held = false;
+	            this.justFinished = true;
 	            this.selected = null;
+
+	            if (this.client) {
+	        		var event = {frame: this.client.tick, name: "DESTROY"};
+	            	this.client.updates.push(event);
+	            }
 
 	            this.draggingPlane = new THREE.Plane();
 	            this.physics.dynamicsWorld.removeConstraint(this.draggingHandle);
 	            Ammo.destroy(this.draggingHandle);
 
 	            var controls = this.renderer.getOrbitControls();
-	            controls.noRotate = false;
+	            controls.enableRotate = true;
 	        }
 	    }
 	    if (this._mouse.down) {
@@ -79,16 +106,32 @@ Picker.prototype.update = function() {
 	                var intersection = new THREE.Vector3();
 
 	                if (raycaster.ray.intersectPlane(this.draggingPlane, intersection)) {
-	                    controls.noRotate = true;
+	                    controls.enableRotate = false;
 
 	                    var pos = this.selected.worldToLocal(p);
 	                    this.draggingHandle = new Ammo.btPoint2PointConstraint(body, new Ammo.btVector3(pos.x, pos.y, pos.z));
+
+	                    var i = 0;
+
+		                var objs = this.physics.objects;
+		                for (var c = 0; c < objs.length; c++) {
+		                	if (body == objs[c]) {
+		                		i = c;
+		                		break;
+		                	}
+		                }
+
+		                console.log("CREATING");
+
+	                	var event = {frame: this.client.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
+	                	if (this.client)
+	                		this.client.updates.push(event);
 
 	                    this.physics.dynamicsWorld.addConstraint(this.draggingHandle);
 
 	                    var setting = this.draggingHandle.get_m_setting();
 	                    //setting.set_m_impulseClamp(120);
-	                    setting.set_m_tau(0.001);
+	                    //setting.set_m_tau(0.001);
 	                }
 	            }
 	        }
@@ -102,25 +145,34 @@ Picker.prototype.update = function() {
 	            var intersection = new THREE.Vector3();
 
 	            if (raycaster.ray.intersectPlane(this.draggingPlane, intersection)) {
-	                /*var newInt = new THREE.Vector3();
+	                var newInt = new THREE.Vector3();
 	                newInt.copy(intersection);
-	                if (enableFloorDragging) {
 
+	                var localPos;
+	                var X;
+		            var Y;
+		            var Z;
+
+	                if (this.floor) {
+	                	localPos = this.floor.worldToLocal(newInt);
+	                	var params = this.floor.geometry.parameters;
+	                	X = params.width*0.5;
+	                	Y = params.height*0.5;
+	                	Z = params.depth*0.5;
 	                }
-	                /*var localPos = floorMesh.worldToLocal(newInt);
 
-	                var X = 5000;
-	                var Y = 500;
-	                var Z = 5000;
-
-	                if (inRange(localPos.x, -X, X) && inRange(localPos.y, -Y-10000, Y) && inRange(localPos.z, -Z, Z)) {
+	                if (localPos && inRange(localPos.x, -X, X) && inRange(localPos.y, -Y-10000, Y) && inRange(localPos.z, -Z, Z)) {
 	                    /*console.log("in range in x "+inRange(localPos.x, -X, X)+", "+localPos.x);
 	                    console.log("in range in y "+inRange(localPos.y, -Y-10000, Y)+", "+localPos.y);
 	                    console.log("in range in z "+inRange(localPos.z, -Z, Z)+", "+localPos.z);
 	                    return;*/
-	                //} else {
+	                } else {
+	                	var event = {frame: this.client.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
+	                	if (this.client)
+	                		this.client.updates.push(event);
+
 	                    this.draggingHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
-	                //}
+	                }
 	            }
 	        }
 	    }//*/

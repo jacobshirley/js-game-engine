@@ -1,6 +1,7 @@
 /*function Object() {
 	this.renderData = {}; //rendering related stuff in here
 	this.physicsData = {}; //physics related stuff in here
+    this.networkData = {};
 
 	this.x = function () {
 
