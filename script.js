@@ -105,7 +105,7 @@ function main() {
     var time = new Date().getTime();
     var curUpdate = 0;
     var upd = 0;
-    var DELAY = 200;
+    var DELAY = 30;
     var delay = 0;
     var delayTick = 0;
     var latency = 400;
@@ -158,6 +158,31 @@ function main() {
     var shown = false;
     var initialised = false;
 
+    function doUpdate(update) {
+        if (update.name == "CREATE") {
+            //console.log("MADE");
+            var body = physics.objects[update.index];
+            var pos = update.data;
+
+            otherHandle = new Ammo.btPoint2PointConstraint(body, new Ammo.btVector3(pos.x, pos.y, pos.z));
+            physics.dynamicsWorld.addConstraint(otherHandle);
+        } else if (update.name == "MOVE") {
+            var intersection = update.data;
+            otherHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
+        } else if (update.name == "DESTROY") {
+            physics.dynamicsWorld.removeConstraint(otherHandle);
+            Ammo.destroy(otherHandle);
+
+            otherHandle = null;
+        }
+    }
+
+    var processedUpdates = 0;
+    var startedApplying = [];
+
+    var startedUpdates = [];
+    var toBeFinished = [];
+
     function animate() {
         var curTime = new Date().getTime();
 
@@ -191,153 +216,167 @@ function main() {
                 }
             }
 
+            //processedUpdates += client.updates.length;
             client.sendUpdates();
         }
 
         client.recv();
         updates = client.receivedUpdates;
 
-        setDebugText("Tick: "+client.tick);
+        setDebugText("Tick: "+client.tick+", updates: "+processedUpdates);
 
-        var phys = physics;
+        var appliedUpdates = [];
+        var stoppedUpdates = [];
 
-        if (curUpdate < updates.length) {
-            var update = updates[curUpdate];
-            //console.log(updates.length);
-            while (curUpdate < updates.length && !update.frame) {
-                update = updates[curUpdate];
-                if (update.name == "CONNECTION") {
-                    //console.log("GOT CONNECTION");
-                    var p = physics.getAllObjectProps();
-                    reset(p);
-                    if (client.isHost) {
-                        client.updates.push({name: "INIT", target: update.id, startFrame: client.tick, props: p});
-                    }
-                } else if (update.name == "INIT") {
-                    if (update.target == client.id) {
-                        initialised = true;
-                        reset(update.props);
-                        client.tick = update.startFrame;
-                        delay = DELAY;
-                    }
-                }
-                curUpdate++;
-            }
-            if (curUpdate >= updates.length) {
-                client.receivedUpdates = [];
-                curUpdate = 0;
-                updates = [];
-            }
-            if (initialised) {
-                while (client.tick == update.frame) {
-                    if (update.name == "CREATE") {
-                        //console.log("MADE");
-                        var body = phys.objects[update.index];
-                        var pos = update.data;
+        for (var i = 0; i < updates.length; i++) {
+            var id = updates[i].id;
+            var updateCache = updates[i].updates;
 
-                        otherHandle = new Ammo.btPoint2PointConstraint(body, new Ammo.btVector3(pos.x, pos.y, pos.z));
-                        phys.dynamicsWorld.addConstraint(otherHandle);
-                    } else if (update.name == "MOVE") {
-                        var intersection = update.data;
-                        otherHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
-                    } else if (update.name == "DESTROY") {
-                        phys.dynamicsWorld.removeConstraint(otherHandle);
-                        Ammo.destroy(otherHandle);
-
-                        otherHandle = null;
-                    } else if (update.name == "UPDATE_POS") {
-                        var body = phys.objects[update.index];
-                        var aVel = update.aVel;
-                        var lVel = update.lVel;
-
-                        var pos = update.pos;
-                        var rot = update.rot;
-
-                        var transform = body.getWorldTransform();
-                        transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
-                        transform.setRotation(new Ammo.btQuaternion(rot.x, rot.y, rot.z, rot.w));
-
-                        body.setAngularVelocity(new Ammo.btVector3(aVel.x, aVel.y, aVel.z));
-                        body.setLinearVelocity(new Ammo.btVector3(lVel.x, lVel.y, lVel.z));
-                    } else if (update.name == "RESET_ALL") {
-                        //console.log("NEXT RESET "+update.frame);
-                        resetFrame = update.frame;
-                        props = update.props;
-
-                        //console.log("DOING RESET");
-
-                        physics.setAllObjectProps(props);
-
-                        client.receivedUpdates.splice(0, curUpdate+1);
-                        curUpdate = 0;
-                        if (updates.length == 0)
-                            break;
-
-                        update = updates[curUpdate];
-                        continue;
-                    }
-                    curUpdate++;
-                    if (curUpdate >= updates.length) {
-                        //console.log("CLEARING");
-                        client.receivedUpdates = [];
-                        curUpdate = 0;
-                        updates = [];
-
-                        break;
-                    } else
-                        update = updates[curUpdate];
-                }
-            }
-        }
-
-        world.update(10);
-
-        /*if (world.picker.selected != null) {
-            var body = world.picker.selected.userData.body;
-            var aVel = body.getAngularVelocity();
-            var lVel = body.getLinearVelocity();
-
-            var i = 0;
-
-            var objs = phys.objects;
-            for (var c = 0; c < objs.length; c++) {
-                if (body == objs[c]) {
-                    i = c;
+            var index = -1;
+            for (var j = 0; j < startedApplying.length; j++) {
+                if (startedApplying[j] == id) {
+                    index = j;
                     break;
                 }
             }
 
-            //console.log("body");
-            //console.log(body.getWorldTransform());
+            if (updateCache.length > 0) {
+                var update = updateCache[0];
+                while (!update.frame && updateCache.length > 0) {
+                    update = updateCache[0];
+                    if (update.name == "CONNECTION") {
+                        var p = physics.getAllObjectProps();
+                        reset(p);
+                        if (client.isHost) {
+                            client.updates.push({name: "INIT", target: update.id, startFrame: client.tick, props: p});
+                        }
+                    } else if (update.name == "INIT") {
+                        if (update.target == client.id) {
+                            initialised = true;
 
-            var mS = body.getMotionState();
-            mS.getWorldTransform(_trans2);
+                            reset(update.props);
+                            client.tick = update.startFrame;
+                            delay = DELAY;
+                        }
+                    }
+                    updateCache.shift();
+                }
 
-            var origin = _trans2.getOrigin();
-            var rotation = _trans2.getRotation();
+                if (initialised && updateCache.length > 0) {
+                    update = updateCache[0];
+                    if (client.id != id) {
+                        while (client.tick == update.frame) {
+                            if (update.name == "RESET_ALL") {
+                                //physics.setAllObjectProps(update.props);
+                            } else if (update.name == "APPLY") {
+                                //console.log("applied");
+                                var applied = update.updateMeta;
+                                for (var j = 0; j < applied.length; j++) {
+                                    var apply = applied[j];
+                                    startedUpdates.push(apply);
+                                }
+                            } else if (update.name == "STOP_APPLYING") {
+                                //console.log("got stop");
+                                var applied = update.updateMeta;
+                                toBeFinished = applied;
+                                while (toBeFinished.length > 0) {
+                                    var test = toBeFinished.shift();
+                                    for (var j = 0; j < startedUpdates.length; j++) {
+                                        if (test == startedUpdates[j]) {
+                                            //console.log("stopped");
+                                            startedUpdates.splice(j, 1);
+                                            break;
+                                        }
+                                    }
+                                }
+                            } else {
+                                doUpdate(update);
+                            }
+                            updateCache.shift();
+                            if (updateCache.length == 0)
+                                break;
 
-            var pos = {x: origin.x(), y: origin.y(), z: origin.z()};
-            var rot = {x: rotation.x(), y: rotation.y(), z: rotation.z(), w: rotation.w()};
+                            update = updateCache[0];
+                            //processedUpdates++;
+                        }
+                    }
 
-            var transform = body.getWorldTransform();
-            //transform.setOrigin(new Ammo.btVector3(0, 1000, 0));
-            //body.setWorldTransform(transform);
-            //console.log(transform);
+                    if (id != client.id && client.isHost && update.frame < client.tick) {
+                        var tempTick = update.frame;
+                        var started = update.frame == tempTick;
+                        if (started) {
+                            if (index == -1) {
+                                //console.log("applied");
+                                startedApplying.push(id);
+                                appliedUpdates.push(id);
+                            }
+                        }
+                        while (update.frame == tempTick) {
+                            processedUpdates++;
+                            //console.log(JSON.stringify(update)+"   : "+processedUpdates+", client tick "+client.tick);
+                            doUpdate(update);
 
-            //console.log("SDFsdFF");
-            client.updates.push({name:"UPDATE_POS", index: i, 
-                                 pos: pos,
-                                 rot: rot,
-                                 aVel: {x: aVel.x(), y: aVel.y(), z: aVel.z()}, 
-                                 lVel: {x: lVel.x(), y: lVel.y(), z: lVel.z()}
-                               });
-                               
+                            updateCache.shift();
+                            if (updateCache.length == 0)
+                                break;
 
-            if (world.picker.justFinished) {
-                world.picker.justFinished = false;
-                world.picker.selected = null;
+                            update = updateCache[0];
+                        }
+                        
+                    }
+                }
+            } else {
+                if (index != -1) {
+                    //console.log("stopped2");
+                    stoppedUpdates.push(id);
+                    startedApplying.splice(index, 1);
+                }
             }
-        }//*/
+        }
+
+        if (!client.isHost) {         
+            var found = false;
+            for (var k = 0; k < startedUpdates.length; k++) {
+                var updateCache = updates[startedUpdates[k]].updates;
+                if (updateCache.length > 0) {
+                    var update = updateCache[0];
+
+                    var tempTick = update.frame;
+                    var started = update.frame == tempTick;
+                    while (update.frame == tempTick) {
+                        processedUpdates++;
+                        //console.log(JSON.stringify(update)+"   : "+processedUpdates+", client tick "+client.tick);
+                        doUpdate(update);
+
+                        updateCache.shift();
+                        if (updateCache.length == 0)
+                            break;
+
+                        update = updateCache[0];
+                    }
+                }
+            }
+
+            /*while (toBeFinished.length > 0) {
+                var test = toBeFinished.shift();
+                for (var j = 0; j < startedUpdates.length; j++) {
+                    if (test == startedUpdates[j]) {
+                        //console.log("SDFSDF");
+                        console.log("stopped");
+                        startedUpdates.splice(j, 1);
+                        break;
+                    }
+                }
+            }*/
+        }
+
+        if (appliedUpdates.length > 0)
+            client.updates.push({name: "APPLY", frame: client.tick, updateMeta: appliedUpdates});
+
+        if (stoppedUpdates.length > 0)
+            client.updates.push({name: "STOP_APPLYING", frame: client.tick, updateMeta: stoppedUpdates});
+
+        world.update(10);
 
         lastTime = curTime;
 

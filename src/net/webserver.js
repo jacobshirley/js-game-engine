@@ -7,11 +7,12 @@ var updates = [];
 wss.on('connection', function connection(ws) {
 	clients.push(ws);
 
-	ws.send(JSON.stringify({isHost: clients.length == 1, id: clients.length}));
+	ws.id = clients.length;
+	ws.send(JSON.stringify({isHost: clients.length == 1, id: ws.id}));
 
 	ws.on('message', function incoming(message) {
 		//console.log("got message "+message);
-		updates.push({from: ws, data: JSON.parse(message)});
+		updates.push({from: ws.id, data: JSON.parse(message)});
 	});
 
 	ws.on('close', function (ws2) {
@@ -33,9 +34,9 @@ setInterval(function() {
 			var us = [];
 
 			updates.forEach(function(update) {
-				if (update.from != client) {
-					us = us.concat(update.data);
-				}
+				//if (update.from != client.id) {
+					us.push(update);
+				//}
 			});
 			if (us.length > 0) {
 				var str = JSON.stringify(us);

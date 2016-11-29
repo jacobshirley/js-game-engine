@@ -41,6 +41,8 @@ function Picker(renderer, physics) {
     this.floor = null;
 
     this.client = null;
+
+    this.updatesRecord = [];
 }
 
 Picker.prototype.setClient = function (client) {
@@ -71,11 +73,15 @@ Picker.prototype.update = function() {
 	            if (this.client) {
 	        		var event = {frame: this.client.tick, name: "DESTROY"};
 	            	this.client.updates.push(event);
+	            	this.updatesRecord.push(event);
 	            }
 
 	            this.draggingPlane = new THREE.Plane();
-	            this.physics.dynamicsWorld.removeConstraint(this.draggingHandle);
-	            Ammo.destroy(this.draggingHandle);
+
+	            if (this.client.isHost) {
+		            this.physics.dynamicsWorld.removeConstraint(this.draggingHandle);
+		            Ammo.destroy(this.draggingHandle);
+		        }
 
 	            var controls = this.renderer.getOrbitControls();
 	            controls.enableRotate = true;
@@ -124,11 +130,14 @@ Picker.prototype.update = function() {
 		                console.log("CREATING");
 
 	                	var event = {frame: this.client.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
-	                	if (this.client)
+	                	if (this.client) {
 	                		this.client.updates.push(event);
+	                		this.updatesRecord.push(event);
+	                	}
 
-	                    this.physics.dynamicsWorld.addConstraint(this.draggingHandle);
-
+	                	if (this.client.isHost) {
+	                    	this.physics.dynamicsWorld.addConstraint(this.draggingHandle);
+	                    }
 	                    var setting = this.draggingHandle.get_m_setting();
 	                    //setting.set_m_impulseClamp(120);
 	                    //setting.set_m_tau(0.001);
@@ -168,10 +177,14 @@ Picker.prototype.update = function() {
 	                    return;*/
 	                } else {
 	                	var event = {frame: this.client.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
-	                	if (this.client)
+	                	if (this.client) {
 	                		this.client.updates.push(event);
+	                		this.updatesRecord.push(event);
+	                	}
 
-	                    this.draggingHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
+	                	if (this.client.isHost) {
+	                    	this.draggingHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
+	                    }
 	                }
 	            }
 	        }

@@ -42,7 +42,9 @@ function WebClient(name) {
 			_this.isHost = true;
 		} else {
 			//console.log("got server updates "+_this.serverUpdates.length+", new data length "+data.length);
-			_this.serverUpdates = _this.serverUpdates.concat(data);
+			var data = JSON.parse(msg.data);
+			for (var i = 0; i < data.length; i++)
+				_this.cacheUpdates(data[i]);
 			
 			//console.log(_this.serverUpdates);
 		}
@@ -52,12 +54,24 @@ function WebClient(name) {
 		});
 		//console.log(_this.serverUpdates.length);
 	}
+	
 	this.updates = [];
-	this.serverUpdates = [];
 
+	this.serverUpdates = [];
 	this.receivedUpdates = [];
 
+	for (var i = 0; i < 64; i++) {
+		this.serverUpdates.push({id: i, updates: []});
+		this.receivedUpdates.push({id: i, updates: []});
+	}
+
 	this.onMessages = [];
+}
+
+WebClient.prototype.cacheUpdates = function(data) {
+	var obj = this.serverUpdates[data.from];
+
+	obj.updates = obj.updates.concat(data.data);
 }
 
 WebClient.prototype.send = function(data) {
@@ -68,12 +82,28 @@ WebClient.prototype.send = function(data) {
 
 WebClient.prototype.sendUpdates = function() {
 	if (this.connected && this.updates.length > 0) {
+		//console.log("Sending "+this.updates.length+ " updates");
+		//
 		this.ws.send(JSON.stringify(this.updates.splice(0)));
 	}
 }
 
 WebClient.prototype.recv = function() {
-	this.receivedUpdates = this.receivedUpdates.concat(this.serverUpdates.splice(0));
+	var serverUpdates = this.serverUpdates;
+	var recvUpdates = this.receivedUpdates;
+	
+	for (var i = 0; i < serverUpdates.length; i++) {
+		var id = serverUpdates[i].id;
+
+		var toBeRemovedFrom = serverUpdates[id];
+		var toBeAddedTo = recvUpdates[id];
+
+		if (toBeRemovedFrom.updates.length > 0) {
+			//console.log("Recieved "+toBeRemovedFrom.updates.length+ " updates");
+		}
+	
+		toBeAddedTo.updates = toBeAddedTo.updates.concat(toBeRemovedFrom.updates.splice(0));
+	}
 }
 
 function Server() {
