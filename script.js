@@ -6,6 +6,7 @@ function main() {
     var renderer, physics, world;
     var server = new Server();
     var client = new WebClient("SDFSDF");
+    var networking = new Networking(client, physics, 64);
 
     //server.addClient(client);
 
@@ -20,7 +21,7 @@ function main() {
         world = new World(renderer, physics);
         world.init();
         world.picker.enabled = true;
-        world.picker.setClient(client);
+        world.picker.setNetworking(networking);
 
         //create the lighting
         
@@ -48,8 +49,6 @@ function main() {
     }
 
     init();
-
-    
 
     //server.addObject(new Block(props));
 
@@ -105,10 +104,10 @@ function main() {
     var time = new Date().getTime();
     var curUpdate = 0;
     var upd = 0;
-    var DELAY = 30;
+    var DELAY = 20;
     var delay = 0;
     var delayTick = 0;
-    var latency = 400;
+    var latency = 150;
     var maxUpdatesBeforeReset = 10;
     var queued = [];
     var updates = [];
@@ -120,7 +119,7 @@ function main() {
     var FPS = 120;
     var started = false;
 
-    client.onMessages.push(function(data) {
+    /*client.onMessages.push(function(data) {
         if (typeof data.isHost != 'undefined') {
             initialised = data.isHost;
             if (!data.isHost) {
@@ -128,12 +127,11 @@ function main() {
                 client.updates.push({name: "CONNECTION", id: client.id});
             }
         }
-    });
+    });*/
 
     function reset(state) {
         world.removeAll(true);
-        physics.destroy();
-        physics.init();
+        physics.reset();
         createAll();
 
         if (state)
@@ -183,6 +181,25 @@ function main() {
     var startedUpdates = [];
     var toBeFinished = [];
 
+    networking.addUpdateProcessor({process: function (update) {
+        if (update.name == "CONNECTION") {
+            console.log("GOT CONNECTIONNNNN");
+            var p = physics.getAllObjectProps();
+            reset(p);
+            if (client.isHost) {
+                client.updates.push({name: "INIT", target: update.id, startFrame: client.tick, props: p});
+            }
+        } else if (update.name == "INIT") {
+            if (update.target == client.id) {
+                initialised = true;
+
+                reset(update.props);
+                client.tick = update.startFrame;
+                delay = DELAY;
+            }
+        }
+    }});
+
     function animate() {
         var curTime = new Date().getTime();
 
@@ -220,7 +237,9 @@ function main() {
             client.sendUpdates();
         }
 
-        client.recv();
+        networking.update();
+
+        /*client.recv();
         updates = client.receivedUpdates;
 
         setDebugText("Tick: "+client.tick+", updates: "+processedUpdates);
@@ -269,21 +288,18 @@ function main() {
                             if (update.name == "RESET_ALL") {
                                 //physics.setAllObjectProps(update.props);
                             } else if (update.name == "APPLY") {
-                                //console.log("applied");
                                 var applied = update.updateMeta;
                                 for (var j = 0; j < applied.length; j++) {
                                     var apply = applied[j];
                                     startedUpdates.push(apply);
                                 }
                             } else if (update.name == "STOP_APPLYING") {
-                                //console.log("got stop");
                                 var applied = update.updateMeta;
                                 toBeFinished = applied;
                                 while (toBeFinished.length > 0) {
                                     var test = toBeFinished.shift();
                                     for (var j = 0; j < startedUpdates.length; j++) {
                                         if (test == startedUpdates[j]) {
-                                            //console.log("stopped");
                                             startedUpdates.splice(j, 1);
                                             break;
                                         }
@@ -306,7 +322,6 @@ function main() {
                         var started = update.frame == tempTick;
                         if (started) {
                             if (index == -1) {
-                                //console.log("applied");
                                 startedApplying.push(id);
                                 appliedUpdates.push(id);
                             }
@@ -337,7 +352,8 @@ function main() {
         if (!client.isHost) {         
             var found = false;
             for (var k = 0; k < startedUpdates.length; k++) {
-                var updateCache = updates[startedUpdates[k]].updates;
+                var id = startedUpdates[k];
+                var updateCache = updates[id].updates;
                 if (updateCache.length > 0) {
                     var update = updateCache[0];
 
@@ -356,27 +372,22 @@ function main() {
                     }
                 }
             }
-
-            /*while (toBeFinished.length > 0) {
-                var test = toBeFinished.shift();
-                for (var j = 0; j < startedUpdates.length; j++) {
-                    if (test == startedUpdates[j]) {
-                        //console.log("SDFSDF");
-                        console.log("stopped");
-                        startedUpdates.splice(j, 1);
-                        break;
-                    }
-                }
-            }*/
         }
 
         if (appliedUpdates.length > 0)
             client.updates.push({name: "APPLY", frame: client.tick, updateMeta: appliedUpdates});
 
         if (stoppedUpdates.length > 0)
-            client.updates.push({name: "STOP_APPLYING", frame: client.tick, updateMeta: stoppedUpdates});
+            client.updates.push({name: "STOP_APPLYING", frame: client.tick, updateMeta: stoppedUpdates});*/
 
         world.update(10);
+
+        /*if (!client.isHost) {         
+            var found = false;
+            for (var k = 0; k < startedUpdates.length; k++) {
+                var id = startedUpdates[k];
+            }
+        }*/
 
         lastTime = curTime;
 

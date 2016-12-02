@@ -20,7 +20,7 @@ Client.prototype.queueUpdates = function(queue) {
 }
 
 function WebClient(name) {
-	this.ws = new WebSocket("ws://127.0.0.1:8080/");
+	this.ws = new WebSocket("ws://192.168.1.75:8080/");
 	this.connected = false;
 
 	this.isHost = false;
@@ -28,6 +28,7 @@ function WebClient(name) {
 	this.tick = 0;
 
 	var _this = this;
+
 	this.ws.onopen = function() {
 		console.log("CONNECTED");
 		_this.connected = true;
@@ -35,42 +36,47 @@ function WebClient(name) {
 	
 	this.ws.onmessage = function(msg) {
 		var data = JSON.parse(msg.data);
-		if (data.id) {
+		/*if (data.id) {
 			_this.id = data.id;
 		}
 		if (data.isHost) {
 			_this.isHost = true;
 		} else {
-			//console.log("got server updates "+_this.serverUpdates.length+", new data length "+data.length);
 			var data = JSON.parse(msg.data);
 			for (var i = 0; i < data.length; i++)
 				_this.cacheUpdates(data[i]);
-			
-			//console.log(_this.serverUpdates);
-		}
+		}*/
+
+		for (var i = 0; i < data.length; i++)
+			_this.cacheUpdates(data[i]);
 
 		_this.onMessages.forEach(function (oM) {
 			oM(data);
 		});
-		//console.log(_this.serverUpdates.length);
+	}
+
+	this.ws.onclose = function() {
+		_this.connected = false;
+		//_this.ws.send(JSON.stringify(data));
 	}
 	
 	this.updates = [];
 
 	this.serverUpdates = [];
-	this.receivedUpdates = [];
+	//this.receivedUpdates = [];
+	//
+	//this.svUpdates = [{id: -1, updates: []};
 
-	for (var i = 0; i < 64; i++) {
+	for (var i = -1; i < 64; i++) {
 		this.serverUpdates.push({id: i, updates: []});
-		this.receivedUpdates.push({id: i, updates: []});
+		//this.receivedUpdates.push({id: i, updates: []});
 	}
 
 	this.onMessages = [];
 }
 
 WebClient.prototype.cacheUpdates = function(data) {
-	var obj = this.serverUpdates[data.from];
-
+	var obj = this.serverUpdates[data.from+1];
 	obj.updates = obj.updates.concat(data.data);
 }
 

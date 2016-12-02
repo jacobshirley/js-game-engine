@@ -40,6 +40,11 @@ Physics.prototype.destroy = function() {
     this.objects = [];
 }
 
+Physics.prototype.reset = function() {
+    this.destroy();
+    this.init();
+}
+
 Physics.prototype.addObject = function(obj) {
 	this.objects.push(obj.physicsData.body);
 
@@ -74,6 +79,36 @@ Physics.prototype.setAllObjectProps = function(props) {
 }
 
 var _trans3 = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
+
+Physics.prototype.getObjectProps = function(index) {
+    var body = this.objects[index];
+    var aVel = body.getAngularVelocity();
+    var lVel = body.getLinearVelocity();
+
+    _trans3 = body.getWorldTransform();
+
+    var origin = _trans3.getOrigin();
+    var rotation = _trans3.getRotation();
+
+    var basis = _trans3.getBasis();
+    var rows = [];
+    for (var i = 0; i < 3; i++) {
+        var row = basis.getRow(i);
+        rows.push({x: row.x(), y: row.y(), z: row.z()});
+    }
+
+    var pos = {x: origin.x(), y: origin.y(), z: origin.z()};
+    var rot = rows;
+
+    var result = {index: index, 
+                     pos: pos,
+                     rot: rot,
+                     aVel: {x: aVel.x(), y: aVel.y(), z: aVel.z()}, 
+                     lVel: {x: lVel.x(), y: lVel.y(), z: lVel.z()}
+                 };
+
+    return result;
+}
 
 Physics.prototype.getAllObjectProps = function() {
 	var props = [];

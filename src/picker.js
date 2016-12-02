@@ -40,13 +40,13 @@ function Picker(renderer, physics) {
 
     this.floor = null;
 
-    this.client = null;
+    this.networking = null;
 
     this.updatesRecord = [];
 }
 
-Picker.prototype.setClient = function (client) {
-	this.client = client;
+Picker.prototype.setNetworking = function (networking) {
+	this.networking = networking;
 }
 
 Picker.prototype.setFloor = function (floor) {
@@ -70,15 +70,14 @@ Picker.prototype.update = function() {
 	            this.justFinished = true;
 	            this.selected = null;
 
-	            if (this.client) {
-	        		var event = {frame: this.client.tick, name: "DESTROY"};
-	            	this.client.updates.push(event);
-	            	this.updatesRecord.push(event);
+	            if (this.networking) {
+	        		var event = {frame: this.networking.tick, name: "DESTROY"};
+	            	this.networking.addUpdate(event);
 	            }
 
 	            this.draggingPlane = new THREE.Plane();
 
-	            if (this.client.isHost) {
+	            if (this.networking.isHost) {
 		            this.physics.dynamicsWorld.removeConstraint(this.draggingHandle);
 		            Ammo.destroy(this.draggingHandle);
 		        }
@@ -129,13 +128,12 @@ Picker.prototype.update = function() {
 
 		                console.log("CREATING");
 
-	                	var event = {frame: this.client.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
-	                	if (this.client) {
-	                		this.client.updates.push(event);
-	                		this.updatesRecord.push(event);
+	                	var event = {frame: this.networking.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
+	                	if (this.networking) {
+	                		this.networking.addUpdate(event);
 	                	}
 
-	                	if (this.client.isHost) {
+	                	if (this.networking.isHost) {
 	                    	this.physics.dynamicsWorld.addConstraint(this.draggingHandle);
 	                    }
 	                    var setting = this.draggingHandle.get_m_setting();
@@ -176,13 +174,12 @@ Picker.prototype.update = function() {
 	                    console.log("in range in z "+inRange(localPos.z, -Z, Z)+", "+localPos.z);
 	                    return;*/
 	                } else {
-	                	var event = {frame: this.client.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
-	                	if (this.client) {
-	                		this.client.updates.push(event);
-	                		this.updatesRecord.push(event);
+	                	var event = {frame: this.networking.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
+	                	if (this.networking) {
+	                		this.networking.addUpdate(event);
 	                	}
 
-	                	if (this.client.isHost) {
+	                	if (this.networking.isHost) {
 	                    	this.draggingHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
 	                    }
 	                }
