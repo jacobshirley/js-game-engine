@@ -17,6 +17,7 @@
 }*/
 
 function Block(props) {
+    this.props = props;
 
 	//properties
 	

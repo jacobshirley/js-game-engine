@@ -1,7 +1,11 @@
 var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({ port: 8080 });
 
+var MAX_CLIENTS = 64;
+
+var clientIndices = [];
 var clients = [];
+
 var updates = [];
 
 wss.on('connection', function connection(ws) {

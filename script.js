@@ -104,7 +104,7 @@ function main() {
     var time = new Date().getTime();
     var curUpdate = 0;
     var upd = 0;
-    var DELAY = 20;
+    var DELAY = 300;
     var delay = 0;
     var delayTick = 0;
     var latency = 150;
@@ -157,8 +157,8 @@ function main() {
     var initialised = false;
 
     function doUpdate(update) {
+        console.log(update);
         if (update.name == "CREATE") {
-            //console.log("MADE");
             var body = physics.objects[update.index];
             var pos = update.data;
 
@@ -172,7 +172,11 @@ function main() {
             Ammo.destroy(otherHandle);
 
             otherHandle = null;
+        } else if (update.name == "RESET_ALL") {
+            physics.setAllObjectProps(update.props);
         }
+
+        return Networking.CONTINUE_DELETE;
     }
 
     var processedUpdates = 0;
@@ -181,63 +185,90 @@ function main() {
     var startedUpdates = [];
     var toBeFinished = [];
 
+    var initUpdate = null;
+    var initialised = false;
+
     networking.addUpdateProcessor({process: function (update) {
         if (update.name == "CONNECTION") {
-            console.log("GOT CONNECTIONNNNN");
             var p = physics.getAllObjectProps();
             reset(p);
-            if (client.isHost) {
-                client.updates.push({name: "INIT", target: update.id, startFrame: client.tick, props: p});
+
+            if (networking.isHost) {
+                console.log("SENDING");
+                networking.addUpdate({name: "INIT", target: update.id, startFrame: networking.tick, props: p});
             }
+
+            return Networking.CONTINUE_DELETE;
         } else if (update.name == "INIT") {
-            if (update.target == client.id) {
+            if (update.target == networking.id) {
                 initialised = true;
 
-                reset(update.props);
-                client.tick = update.startFrame;
-                delay = DELAY;
+                //networking.tick = update.startFrame;
+                initUpdate = update;
+                //networking.tick = initUpdate.startFrame;
+                //reset(initUpdate.props);
+
+                var delay2 = new NetworkDelay(DELAY, true);
+                delay2.onFinished = function() {
+                    networking.tick = initUpdate.startFrame;
+                    reset(initUpdate.props);
+                }
+                networking.addDelay(delay2);
             }
+            return Networking.CONTINUE_DELETE;
         }
+        //if (!initialised)
+            //return Networking.CONTINUE_DELETE;
+
+        return Networking.SKIP;
     }});
+
+    class PhysicsUpdater extends UpdateProcessor {
+        constructor(networking) {
+            super(networking);
+        }
+
+        process(update) {
+            return doUpdate(update);
+        }
+    }
+
+    var physicsUpdater = new PhysicsUpdater(networking);
+    var frameUpdater = new FrameUpdater(networking, physicsUpdater, false);
+    var serverControlUpdater = new FrameUpdater(networking, new ServerControllerUpdater(networking, frameUpdater), true);
+
+    //networking.addUpdateProcessor(frameUpdater);
+    networking.addUpdateProcessor(serverControlUpdater);
 
     function animate() {
         var curTime = new Date().getTime();
-
-        if (delay > 0) {
-            delayTick++;
-        }
-
-        if (!done && delayTick < delay) {
-            console.log("STILL DELAYED");
-            setDebugText("DELAYED");
-            return;
-        }
-
-        if (delay > 0) {
-            done = true;
-        }
 
         delay = 0;
 
         client.tick++;
 
+        networking.update();
+
         if (curTime - time >= latency) {
             time = curTime;
 
-            if (client.isHost) {
+            if (networking.isHost) {
                 curReset++;
                 if (curReset == maxUpdatesBeforeReset) {
                     curReset = 0;
                     var p = physics.getAllObjectProps();
-                    client.updates.push({frame: client.tick, name: "RESET_ALL", props: p});
+                    //networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
                 }
             }
 
-            //processedUpdates += client.updates.length;
+            //networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
             client.sendUpdates();
         }
 
-        networking.update();
+        setDebugText("Tick: "+networking.tick+", updates: "+processedUpdates);
+
+        world.update(10);
+
 
         /*client.recv();
         updates = client.receivedUpdates;
@@ -337,7 +368,6 @@ function main() {
 
                             update = updateCache[0];
                         }
-                        
                     }
                 }
             } else {
@@ -379,8 +409,6 @@ function main() {
 
         if (stoppedUpdates.length > 0)
             client.updates.push({name: "STOP_APPLYING", frame: client.tick, updateMeta: stoppedUpdates});*/
-
-        world.update(10);
 
         /*if (!client.isHost) {         
             var found = false;

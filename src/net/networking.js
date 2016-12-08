@@ -1,137 +1,279 @@
-var SERVER_INDEX = 0;
+let SERVER_INDEX = 0;
 
-function Networking(client, physics, maxConnections) {
-	this.client = client;
-	this.physics = physics;
+class NetworkDelay {
+	constructor(delay, inTicks) {
+		this.timer = null;
 
-	this.tick = 0;
+		this.delay = delay;
+		this.inTicks = inTicks;
 
-	this.isHost = false;
-	this.clientData = [];
-	this.clientDataIndices = [SERVER_INDEX];
-
-	this.maxConnections = maxConnections;
-
-	this.processingClients = [];
-
-	this.updateProcessors = [];
-
-	this.init();
-}
-
-Networking.prototype.init = function() {
-	this.clientData = [];
-	this.clientDataIndices = [SERVER_INDEX];
-
-	var _this = this;
-
-	for (var i = -1; i < this.maxConnections; i++) {
-		this.clientData.push({id: i, updates: []});
+		this.marker = 0;
+		this.onFinished = null;
 	}
 
-	this.addUpdateProcessor({process: function(update) {
+	start() {
+		if (!this.timer)
+			return;
+
+		if (!this.inTicks) {
+			this.marker = this.timer.time;
+		} else {
+			this.marker = this.timer.tick;
+		}
+		this.marker += this.delay;
+	}
+
+	isDone() {
+		if (!this.timer)
+			return false;
+		
+		let bool = false;
+		if (this.inTicks) {
+			bool = this.timer.tick >= this.marker;
+		} else {
+			bool = this.timer.time >= this.marker;
+		}
+		if (bool) {
+			if (this.onFinished)
+				this.onFinished();
+		}
+		return bool;
+	}
+}
+
+class UpdateProcessor {
+	constructor(networking) {
+		this.networking = networking;
+	}
+
+	preprocess() {
+
+	}
+
+	startProcess(clientId) {
+
+	}
+
+	process() {
+
+	}
+
+	endProcess(clientId) {
+		
+	}
+
+	postprocess() {
+
+	}
+}
+
+class ConnectionUpdateProcessor extends UpdateProcessor {
+	constructor(networking) {
+		super(networking);
+		this.initialised = false;
+	}
+
+	process(update) {
 		if (update.frame)
-			return true;
+			return Networking.SKIP;
+
+		let networking = this.networking;
 
         if (update.name == "CONNECTED") {
-            _this.addClient(update.id+1);
-            _this.isHost = update.isHost;
+        	for (var i = networking.clientDataIndices.length; i <= update.id+1; i++) {
+        		console.log("adding clients...");
+        		networking.addClient(i);
+        	}
+        	if (!this.initialised) {
+	        	this.initialised = true;
 
-            _this.client.updates.push({name: "CONNECTION", id: update.id});
+	            networking.isHost = update.isHost;
+	            networking.id = update.id;
+
+	            networking.addUpdate({name: "CONNECTION", id: update.id});
+	        }
+
+            return Networking.CONTINUE_DELETE;
         }
-    }});
+
+        //should never get this far
+        return Networking.SKIP;
+	}
 }
 
-Networking.prototype.addUpdate = function (update) {
-	this.client.updates.push(update);
-}
+class Networking extends Timer{
 
-Networking.prototype.addClient = function (clientId) {
-	this.clientDataIndices.push(clientId);
-}
+	static get BREAK_DELETE() {
+      return 0;
+    }
+    static get BREAK_NOTHING() {
+      return 1;
+    }
+    static get CONTINUE_DELETE() {
+      return 2;
+    }
+    static get SKIP() {
+      return 3;
+    }
 
-Networking.prototype.removeClient = function (clientId) {
-	var inds = this.clientDataIndices;
-	for (var i = 0; i < inds.length; i++) {
-		if (inds[i] == clientId) {
-			this.clientData[inds[i]].updates = [];
-			inds.splice(i, 1);
-			break;
+	constructor(client, physics, maxConnections) {
+		super();
+
+		this.client = client;
+		this.physics = physics;
+
+		//this.tick = 0;
+		this.time = 0;
+
+		this.id = -1;
+		this.isHost = false;
+
+		this.clientData = [];
+		this.clientDataIndices = [SERVER_INDEX];
+
+		this.maxConnections = maxConnections;
+
+		this.processingClients = [];
+
+		this.updateProcessors = [];
+
+		this.serverDelay = null;
+
+		this.init();
+	}
+
+	init() {
+		this.clientData = [];
+		this.clientDataIndices = [SERVER_INDEX];
+
+		let _this = this;
+
+		for (let i = -1; i < this.maxConnections; i++) {
+			this.clientData.push({id: i, updates: []});
+		}
+
+		this.addUpdateProcessor(new ConnectionUpdateProcessor(this));
+	}
+
+	addUpdate(update) {
+		this.client.updates.push(update);
+	}
+
+	addClient(clientId) {
+		this.clientDataIndices.push(clientId);
+	}
+
+	removeClient(clientId) {
+		let inds = this.clientDataIndices;
+		for (let i = 0; i < inds.length; i++) {
+			if (inds[i] == clientId) {
+				this.clientData[inds[i]].updates = [];
+				inds.splice(i, 1);
+				break;
+			}
 		}
 	}
-}
 
-Networking.prototype.addUpdateProcessor = function (processor) {
-	this.updateProcessors.push(processor);
-}
+	addUpdateProcessor(processor) {
+		processor.networking = this;
 
-Networking.prototype.removeUpdateProcessor = function (processor) {
-	// TO DO
-}
-
-Networking.prototype.processUpdates = function (updates) {
-    while (true) {
-        var update = updates[0];
-
-        var bool = false;
-        this.updateProcessors.forEach(function(processor) {
-        	bool = processor.process(update);
-        });
-
-        //if (bool)
-        	//break;
-
-        updates.shift();
-        if (updates.length == 0)
-            break;
-    }
-}
-
-Networking.prototype.update = function () {
-	this.tick++;
-	
-	var clientDataIndices = this.clientDataIndices;
-	var serverUpdates = this.client.serverUpdates;
-	
-	for (var i = 0; i < clientDataIndices.length; i++) {
-		var id = clientDataIndices[i];
-
-		var toBeRemovedFrom = serverUpdates[id];
-		var toBeAddedTo = this.clientData[id];
-	
-		toBeAddedTo.updates = toBeAddedTo.updates.concat(toBeRemovedFrom.updates.splice(0));
+		this.updateProcessors.push(processor);
 	}
-	
-	var clientData = this.clientData;
 
-	var appliedUpdates = [];
-    var stoppedUpdates = [];
+	removeUpdateProcessor(processor) {
+		// TO DO
+	}
 
-    for (var i = 0; i < clientDataIndices.length; i++) {
-    	var ind = clientDataIndices[i];
+	sendUpdates() {
+		this.client.sendUpdates();
+	}
 
-    	//console.log(ind);
+	getUpdate(clientId) {
 
-        var id = clientData[ind].id;
-        var updateCache = clientData[ind].updates;
+	}
 
-        //console.log(updateCache);
+	processUpdates(updates, updaters) {
+		let cont = true;
+	    while (cont) {
+	        let update = updates[0];
 
-        var index = this.processingClients.indexOf(id);
+	        let state = -1;
+	        updaters.forEach(function(processor) {
+	        	let state2 = processor.process(update);
+	        	if (state == -1) {
+	        		state = state2 || Networking.SKIP;
+	        	} else if (state == Networking.SKIP && state2 != state) {
+	        		state = state2;
+	        	} else if (state == Networking.CONTINUE_DELETE && (state2 == Networking.BREAK_DELETE || state2 == Networking.BREAK_NOTHING)) {
+	        		throw "Processor conflict: CONTINUE_DELETE and BREAK_* are incompatible. Please check your updaters.";
+	        		//alert("ERRORORORO");
+	        	} else if (state == Networking.BREAK_NOTHING && state2 == Networking.BREAK_DELETE) {
+	        		state = state2;
+	        	}
+	        });
 
-        if (updateCache.length > 0) {
-        	this.processUpdates(updateCache);
-        } else if (index != -1) {
-            stoppedUpdates.push(id);
-            this.processingClients.splice(index, 1);
-        }
-    }
+	        if (state == Networking.BREAK_DELETE || state == Networking.CONTINUE_DELETE)
+	        	updates.shift();
 
-    if (this.client.isHost) {
-	    if (appliedUpdates.length > 0)
-	        this.client.updates.push({name: "APPLY", frame: client.tick, updateMeta: appliedUpdates});
+	        if (state == Networking.BREAK_DELETE || state == Networking.BREAK_NOTHING)
+	        	break;
 
-	    if (stoppedUpdates.length > 0)
-	        this.client.updates.push({name: "STOP_APPLYING", frame: client.tick, updateMeta: stoppedUpdates});
+	        if (updates.length == 0)
+	            break;
+	    }
+	}
+
+	update() {
+		return super.update(() => {
+			let clientDataIndices = this.clientDataIndices;
+			let serverUpdates = this.client.serverUpdates;
+			
+			for (let i = 0; i < clientDataIndices.length; i++) {
+				let id = clientDataIndices[i];
+
+				let toBeRemovedFrom = serverUpdates[id];
+				let toBeAddedTo = this.clientData[id];
+			
+				toBeAddedTo.updates = toBeAddedTo.updates.concat(toBeRemovedFrom.updates.splice(0));
+			}
+			
+			let clientData = this.clientData;
+
+			let appliedUpdates = [];
+		    let stoppedUpdates = [];
+
+		    this.updateProcessors.forEach(function(processor) {
+		    	if (processor.preprocess)
+		    		processor.preprocess();
+		    });
+
+		    for (let i = 0; i < clientDataIndices.length; i++) {
+		    	let ind = clientDataIndices[i];
+
+		        let id = clientData[ind].id;
+		        let updateCache = clientData[ind].updates;
+
+		        this.updateProcessors.forEach(function(processor) {
+			    	if (processor.startProcess)
+			    		processor.startProcess(id);
+			    });
+
+		        if (updateCache.length > 0) {
+		        	this.processUpdates(updateCache, this.updateProcessors);
+		        }
+
+		        this.updateProcessors.forEach(function(processor) {
+			    	if (processor.endProcess)
+			    		processor.endProcess(id);
+			    });
+		    }
+
+		    this.updateProcessors.forEach(function(processor) {
+		    	if (processor.postprocess)
+		    		processor.postprocess();
+		    });
+
+			return true;
+		});
 	}
 }
