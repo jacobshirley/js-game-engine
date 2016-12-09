@@ -22,26 +22,21 @@ class FrameUpdater extends UpdateProcessor {
     }
 
     process(update) {
+        if (!update.frame)
+            return Networking.SKIP;
+        
         var upd = () => {
             if (this.lastFrame == -1) {
                 this.lastFrame = update.frame;
             }
 
             if (this.lastFrame == update.frame) {
-                if (!this.checkTick) {
-                    //console.log(this.networking.tick);
-                    //console.log(update);
-                }
                 this.subupdater.process(update);
                 return Networking.CONTINUE_DELETE;
             } else {
-
                 return Networking.BREAK_NOTHING;
             }
         }
-
-        if (!update.frame)
-            return Networking.SKIP;
 
         var cont = this.networking.isHost || !this.checkTick || this.networking.tick == update.frame;
         if (cont) {
@@ -50,7 +45,6 @@ class FrameUpdater extends UpdateProcessor {
             } else if (!this.checkTick) {
                 return upd();
             }
-            //console.log(update);
             return Networking.BREAK_DELETE;
         } else {
             return Networking.BREAK_NOTHING;

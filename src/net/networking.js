@@ -75,11 +75,10 @@ class Networking extends Timer{
       return 3;
     }
 
-	constructor(client, physics, maxConnections) {
+	constructor(client, maxConnections) {
 		super();
 
 		this.client = client;
-		this.physics = physics;
 
 		//this.tick = 0;
 		this.time = 0;

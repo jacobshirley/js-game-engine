@@ -6,7 +6,7 @@ function main() {
     var renderer, physics, world;
     var server = new Server();
     var client = new WebClient("SDFSDF");
-    var networking = new Networking(client, physics, 64);
+    var networking = new Networking(client, 64);
 
     //server.addClient(client);
 
@@ -100,18 +100,7 @@ function main() {
     
     //world.addObject(new Ball(props));
     //
-    var DELAY = 300;
-    var delay = 0;
-    var delayTick = 0;
-    var latency = 150;
-    var maxUpdatesBeforeReset = 10;
-    var queued = [];
-    var updates = [];
-    var updatesDone = 0;
-    var curReset = 0;
-
-    var FPS = 120;
-    var started = false;
+    
 
     function reset(state) {
         world.removeAll(true);
@@ -122,71 +111,79 @@ function main() {
             physics.setAllObjectProps(state);
     }
 
-    //reset();
-
     createAll();
+
+    var FPS = 120;
 
     function setDebugText(text) {
         $("#debug").text(text);
     }
 
     setInterval(animate, 1000/FPS);
+    
+    var DELAY = 100; // in ticks
+    var INPUT_DELAY = 15; // in ticks
+    var RESET_DELAY = INPUT_DELAY*6; // in ticks
 
-    var shown = false;
-    var initialised = false;
-
-    var initUpdate = null;
-    var initialised = false;
-
-    networking.addUpdateProcessor({process: function (update) {
-        if (update.name == "CONNECTION") {
-            var p = physics.getAllObjectProps();
-            reset(p);
-
-            if (networking.isHost) {
-                console.log("SENDING");
-                networking.addUpdate({name: "INIT", target: update.id, startFrame: networking.tick, props: p});
-            }
-
-            return Networking.CONTINUE_DELETE;
-        } else if (update.name == "INIT") {
-            if (update.target == networking.id) {
-                initialised = true;
-
-                //networking.tick = update.startFrame;
-                initUpdate = update;
-                //networking.tick = initUpdate.startFrame;
-                //reset(initUpdate.props);
-
-                var delay = new Delay(DELAY, true);
-                delay.onFinished = function() {
-                    networking.tick = initUpdate.startFrame;
-                    reset(initUpdate.props);
-                }
-                networking.addDelay(delay);
-            }
-            return Networking.CONTINUE_DELETE;
+    class PhysicsWorldUpdater extends UpdateProcessor {
+        constructor(networking, world) {
+            super(networking);
+            this.world = world;
+            this.physics = this.world.physics;
+            this.initUpdate = null;
+            this.initialised = false;
         }
-        //if (!initialised)
-            //return Networking.CONTINUE_DELETE;
 
-        return Networking.SKIP;
-    }});
+        process(update) {
+            console.log(update);
+            if (update.name == "CONNECTION") {
+                var p = this.physics.getAllObjectProps();
+                reset(p);
 
-    var pickingPhysicsUpdater = new PickingPhysicsUpdater(networking, physics);
+                if (this.networking.isHost) {
+                    this.networking.addUpdate({name: "INIT", target: update.id, startFrame: this.networking.tick, props: p});
+                }
 
-    var frameUpdater = new FrameUpdater(networking, pickingPhysicsUpdater, false);
+                return Networking.CONTINUE_DELETE;
+            } else if (update.name == "INIT") {
+                if (update.target == this.networking.id) {
+                    console.log("init");
+                    this.initialised = true;
 
-    var serverControlUpdater = new FrameUpdater(networking, new ServerControllerUpdater(networking, frameUpdater), true);
+                    this.initUpdate = update;
 
-    networking.addUpdateProcessor(serverControlUpdater);
+                    var delay = new Delay(DELAY, true);
+                    delay.onFinished = () => {
+                        this.networking.tick = this.initUpdate.startFrame;
+                        reset(this.initUpdate.props);
+                    }
+                    this.networking.addDelay(delay);
 
-    networking.addInterval(new Interval(40, function() {
+                    var pickingPhysicsUpdater = new PickingPhysicsUpdater(this.networking, this.physics);
+                    var frameUpdater = new FrameUpdater(this.networking, pickingPhysicsUpdater, false);
+                    var serverControlUpdater = new FrameUpdater(networking, new ServerControllerUpdater(this.networking, frameUpdater), true);
+
+                    this.networking.addUpdateProcessor(serverControlUpdater);
+                }
+                return Networking.CONTINUE_DELETE;
+            }
+
+            if (!this.initialised)
+                return Networking.CONTINUE_DELETE;
+
+            return Networking.SKIP;
+        }
+    }
+
+    networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world));
+
+    networking.addInterval(new Interval(INPUT_DELAY, function() {
         networking.sendUpdates();
     }));
 
-    networking.addInterval(new Interval(40*4, function() {
+    networking.addInterval(new Interval(RESET_DELAY, function() {
         if (networking.isHost) {
+            console.log("sending");
             var p = physics.getAllObjectProps();
             networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
         }

@@ -30,9 +30,6 @@ class ServerControllerUpdater extends UpdateProcessor{
 	}
 
 	process(update) {
-		if (!update.frame)
-			return Networking.SKIP;
-
 		if (update.name == "APPLY") {
 			if (!this.networking.isHost) {
 				//console.log("applying "+this.networking.tick);

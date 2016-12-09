@@ -19,6 +19,13 @@ Client.prototype.queueUpdates = function(queue) {
 	this.receivedUpdates = this.receivedUpdates.concat(this.serverUpdates.splice(0));
 }
 
+class Connection {
+	constructor() {
+		this.id = -1;
+		this.updates = [];
+	}
+}
+
 function WebClient(name) {
 	this.ws = new WebSocket("ws://192.168.1.75:8080/");
 	this.connected = false;
@@ -36,16 +43,6 @@ function WebClient(name) {
 	
 	this.ws.onmessage = function(msg) {
 		var data = JSON.parse(msg.data);
-		/*if (data.id) {
-			_this.id = data.id;
-		}
-		if (data.isHost) {
-			_this.isHost = true;
-		} else {
-			var data = JSON.parse(msg.data);
-			for (var i = 0; i < data.length; i++)
-				_this.cacheUpdates(data[i]);
-		}*/
 
 		for (var i = 0; i < data.length; i++)
 			_this.cacheUpdates(data[i]);
@@ -57,19 +54,14 @@ function WebClient(name) {
 
 	this.ws.onclose = function() {
 		_this.connected = false;
-		//_this.ws.send(JSON.stringify(data));
 	}
 	
 	this.updates = [];
 
 	this.serverUpdates = [];
-	//this.receivedUpdates = [];
-	//
-	//this.svUpdates = [{id: -1, updates: []};
 
 	for (var i = -1; i < 64; i++) {
 		this.serverUpdates.push({id: i, updates: []});
-		//this.receivedUpdates.push({id: i, updates: []});
 	}
 
 	this.onMessages = [];
