@@ -100,10 +100,6 @@ function main() {
     
     //world.addObject(new Ball(props));
     //
-    var otherHandle = null;
-    var time = new Date().getTime();
-    var curUpdate = 0;
-    var upd = 0;
     var DELAY = 300;
     var delay = 0;
     var delayTick = 0;
@@ -112,8 +108,6 @@ function main() {
     var queued = [];
     var updates = [];
     var updatesDone = 0;
-    var lastTime = time;
-    var done = false;
     var curReset = 0;
 
     var FPS = 120;
@@ -132,11 +126,6 @@ function main() {
 
     createAll();
 
-    var props = null;
-    var resetFrame = -1;
-
-    var frameBuffer = [];
-
     function setDebugText(text) {
         $("#debug").text(text);
     }
@@ -145,12 +134,6 @@ function main() {
 
     var shown = false;
     var initialised = false;
-
-    var processedUpdates = 0;
-    var startedApplying = [];
-
-    var startedUpdates = [];
-    var toBeFinished = [];
 
     var initUpdate = null;
     var initialised = false;
@@ -175,12 +158,12 @@ function main() {
                 //networking.tick = initUpdate.startFrame;
                 //reset(initUpdate.props);
 
-                var delay2 = new NetworkDelay(DELAY, true);
-                delay2.onFinished = function() {
+                var delay = new Delay(DELAY, true);
+                delay.onFinished = function() {
                     networking.tick = initUpdate.startFrame;
                     reset(initUpdate.props);
                 }
-                networking.addDelay(delay2);
+                networking.addDelay(delay);
             }
             return Networking.CONTINUE_DELETE;
         }
@@ -190,73 +173,29 @@ function main() {
         return Networking.SKIP;
     }});
 
-    class PhysicsUpdater extends UpdateProcessor {
-        constructor(networking) {
-            super(networking);
-        }
+    var pickingPhysicsUpdater = new PickingPhysicsUpdater(networking, physics);
 
-        process(update) {
-            if (update.name == "CREATE") {
-                var body = physics.objects[update.index];
-                var pos = update.data;
+    var frameUpdater = new FrameUpdater(networking, pickingPhysicsUpdater, false);
 
-                otherHandle = new Ammo.btPoint2PointConstraint(body, new Ammo.btVector3(pos.x, pos.y, pos.z));
-                physics.dynamicsWorld.addConstraint(otherHandle);
-            } else if (update.name == "MOVE") {
-                var intersection = update.data;
-                otherHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
-            } else if (update.name == "DESTROY") {
-                physics.dynamicsWorld.removeConstraint(otherHandle);
-                Ammo.destroy(otherHandle);
+    var serverControlUpdater = new FrameUpdater(networking, new ServerControllerUpdater(networking, frameUpdater), true);
 
-                otherHandle = null;
-            } else if (update.name == "RESET_ALL") {
-                physics.setAllObjectProps(update.props);
-            }
-
-            return Networking.CONTINUE_DELETE;
-        }
-    }
-
-    var physicsUpdater = new PhysicsUpdater(networking);
-    var frameUpdater = new FrameUpdater(networking, physicsUpdater, false);
-    var scu = new ServerControllerUpdater(networking, frameUpdater);
-    var serverControlUpdater = new FrameUpdater(networking, scu, true);
-
-    //networking.addUpdateProcessor(frameUpdater);
     networking.addUpdateProcessor(serverControlUpdater);
 
-    function animate() {
-        var curTime = new Date().getTime();
+    networking.addInterval(new Interval(40, function() {
+        networking.sendUpdates();
+    }));
 
-        delay = 0;
-
-        client.tick++;
-
-        networking.update();
-
-        if (curTime - time >= latency) {
-            time = curTime;
-
-            if (networking.isHost) {
-                curReset++;
-                if (curReset == maxUpdatesBeforeReset) {
-                    curReset = 0;
-                    var p = physics.getAllObjectProps();
-                    networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
-                }
-            }
-
-            networking.sendUpdates();
+    networking.addInterval(new Interval(40*4, function() {
+        if (networking.isHost) {
+            var p = physics.getAllObjectProps();
+            networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
         }
+    }));
 
+    function animate() {
+        networking.update();
         setDebugText("Tick: "+networking.tick+", updates: ");
-
         world.update(10);
-
-        lastTime = curTime;
-
-        //requestAnimationFrame(animate);
     }
 }
 
