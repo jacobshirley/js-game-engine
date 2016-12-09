@@ -28,11 +28,13 @@ class FrameUpdater extends UpdateProcessor {
             }
 
             if (this.lastFrame == update.frame) {
+                if (!this.checkTick) {
+                    //console.log(this.networking.tick);
+                    //console.log(update);
+                }
                 this.subupdater.process(update);
                 return Networking.CONTINUE_DELETE;
             } else {
-                if (!this.checkTick)
-                    this.lastFrame = update.frame;
 
                 return Networking.BREAK_NOTHING;
             }

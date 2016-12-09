@@ -35,7 +35,7 @@ class ServerControllerUpdater extends UpdateProcessor{
 
 		if (update.name == "APPLY") {
 			if (!this.networking.isHost) {
-				console.log(update);
+				//console.log("applying "+this.networking.tick);
 	        	let applied = update.updateMeta;
 	            this.processingClients = this.processingClients.concat(applied);
 	        }
@@ -50,6 +50,8 @@ class ServerControllerUpdater extends UpdateProcessor{
         	this.didProcess = true;
 
             if (this.networking.isHost && this.processingClientIndex == -1) {
+            	//console.log("applying "+this.networking.tick);
+            	this.processingClientIndex = this.processingClients.length;
                 this.appliedUpdates.push(this.clientId);
                 this.processingClients.push(this.clientId);
             }
@@ -78,9 +80,12 @@ class ServerControllerUpdater extends UpdateProcessor{
 		    if (this.stoppedUpdates.length > 0)
 		        networking.addUpdate({name: "STOP_APPLYING", frame: networking.tick, updateMeta: this.stoppedUpdates});
 		} else {
+			//console.log("start");
 			for (let client of this.processingClients) {
 				let updates = networking.clientData[client+1].updates;
 				if (updates.length > 0) {
+					//console.log("client: "+client);
+					this.subupdater.startProcess(client);
 					networking.processUpdates(updates, [this.subupdater]);
 				}
 			}

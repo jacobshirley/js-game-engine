@@ -119,16 +119,6 @@ function main() {
     var FPS = 120;
     var started = false;
 
-    /*client.onMessages.push(function(data) {
-        if (typeof data.isHost != 'undefined') {
-            initialised = data.isHost;
-            if (!data.isHost) {
-                console.log("ADDING CONNECTION");
-                client.updates.push({name: "CONNECTION", id: client.id});
-            }
-        }
-    });*/
-
     function reset(state) {
         world.removeAll(true);
         physics.reset();
@@ -155,29 +145,6 @@ function main() {
 
     var shown = false;
     var initialised = false;
-
-    function doUpdate(update) {
-        console.log(update);
-        if (update.name == "CREATE") {
-            var body = physics.objects[update.index];
-            var pos = update.data;
-
-            otherHandle = new Ammo.btPoint2PointConstraint(body, new Ammo.btVector3(pos.x, pos.y, pos.z));
-            physics.dynamicsWorld.addConstraint(otherHandle);
-        } else if (update.name == "MOVE") {
-            var intersection = update.data;
-            otherHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
-        } else if (update.name == "DESTROY") {
-            physics.dynamicsWorld.removeConstraint(otherHandle);
-            Ammo.destroy(otherHandle);
-
-            otherHandle = null;
-        } else if (update.name == "RESET_ALL") {
-            physics.setAllObjectProps(update.props);
-        }
-
-        return Networking.CONTINUE_DELETE;
-    }
 
     var processedUpdates = 0;
     var startedApplying = [];
@@ -229,13 +196,32 @@ function main() {
         }
 
         process(update) {
-            return doUpdate(update);
+            if (update.name == "CREATE") {
+                var body = physics.objects[update.index];
+                var pos = update.data;
+
+                otherHandle = new Ammo.btPoint2PointConstraint(body, new Ammo.btVector3(pos.x, pos.y, pos.z));
+                physics.dynamicsWorld.addConstraint(otherHandle);
+            } else if (update.name == "MOVE") {
+                var intersection = update.data;
+                otherHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
+            } else if (update.name == "DESTROY") {
+                physics.dynamicsWorld.removeConstraint(otherHandle);
+                Ammo.destroy(otherHandle);
+
+                otherHandle = null;
+            } else if (update.name == "RESET_ALL") {
+                physics.setAllObjectProps(update.props);
+            }
+
+            return Networking.CONTINUE_DELETE;
         }
     }
 
     var physicsUpdater = new PhysicsUpdater(networking);
     var frameUpdater = new FrameUpdater(networking, physicsUpdater, false);
-    var serverControlUpdater = new FrameUpdater(networking, new ServerControllerUpdater(networking, frameUpdater), true);
+    var scu = new ServerControllerUpdater(networking, frameUpdater);
+    var serverControlUpdater = new FrameUpdater(networking, scu, true);
 
     //networking.addUpdateProcessor(frameUpdater);
     networking.addUpdateProcessor(serverControlUpdater);
@@ -257,165 +243,16 @@ function main() {
                 if (curReset == maxUpdatesBeforeReset) {
                     curReset = 0;
                     var p = physics.getAllObjectProps();
-                    //networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
+                    networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
                 }
             }
 
-            //networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
-            client.sendUpdates();
+            networking.sendUpdates();
         }
 
-        setDebugText("Tick: "+networking.tick+", updates: "+processedUpdates);
+        setDebugText("Tick: "+networking.tick+", updates: ");
 
         world.update(10);
-
-
-        /*client.recv();
-        updates = client.receivedUpdates;
-
-        setDebugText("Tick: "+client.tick+", updates: "+processedUpdates);
-
-        var appliedUpdates = [];
-        var stoppedUpdates = [];
-
-        for (var i = 0; i < updates.length; i++) {
-            var id = updates[i].id;
-            var updateCache = updates[i].updates;
-
-            var index = -1;
-            for (var j = 0; j < startedApplying.length; j++) {
-                if (startedApplying[j] == id) {
-                    index = j;
-                    break;
-                }
-            }
-
-            if (updateCache.length > 0) {
-                var update = updateCache[0];
-                while (!update.frame && updateCache.length > 0) {
-                    update = updateCache[0];
-                    if (update.name == "CONNECTION") {
-                        var p = physics.getAllObjectProps();
-                        reset(p);
-                        if (client.isHost) {
-                            client.updates.push({name: "INIT", target: update.id, startFrame: client.tick, props: p});
-                        }
-                    } else if (update.name == "INIT") {
-                        if (update.target == client.id) {
-                            initialised = true;
-
-                            reset(update.props);
-                            client.tick = update.startFrame;
-                            delay = DELAY;
-                        }
-                    }
-                    updateCache.shift();
-                }
-
-                if (initialised && updateCache.length > 0) {
-                    update = updateCache[0];
-                    if (client.id != id) {
-                        while (client.tick == update.frame) {
-                            if (update.name == "RESET_ALL") {
-                                //physics.setAllObjectProps(update.props);
-                            } else if (update.name == "APPLY") {
-                                var applied = update.updateMeta;
-                                for (var j = 0; j < applied.length; j++) {
-                                    var apply = applied[j];
-                                    startedUpdates.push(apply);
-                                }
-                            } else if (update.name == "STOP_APPLYING") {
-                                var applied = update.updateMeta;
-                                toBeFinished = applied;
-                                while (toBeFinished.length > 0) {
-                                    var test = toBeFinished.shift();
-                                    for (var j = 0; j < startedUpdates.length; j++) {
-                                        if (test == startedUpdates[j]) {
-                                            startedUpdates.splice(j, 1);
-                                            break;
-                                        }
-                                    }
-                                }
-                            } else {
-                                doUpdate(update);
-                            }
-                            updateCache.shift();
-                            if (updateCache.length == 0)
-                                break;
-
-                            update = updateCache[0];
-                            //processedUpdates++;
-                        }
-                    }
-
-                    if (id != client.id && client.isHost && update.frame < client.tick) {
-                        var tempTick = update.frame;
-                        var started = update.frame == tempTick;
-                        if (started) {
-                            if (index == -1) {
-                                startedApplying.push(id);
-                                appliedUpdates.push(id);
-                            }
-                        }
-                        while (update.frame == tempTick) {
-                            processedUpdates++;
-                            //console.log(JSON.stringify(update)+"   : "+processedUpdates+", client tick "+client.tick);
-                            doUpdate(update);
-
-                            updateCache.shift();
-                            if (updateCache.length == 0)
-                                break;
-
-                            update = updateCache[0];
-                        }
-                    }
-                }
-            } else {
-                if (index != -1) {
-                    //console.log("stopped2");
-                    stoppedUpdates.push(id);
-                    startedApplying.splice(index, 1);
-                }
-            }
-        }
-
-        if (!client.isHost) {         
-            var found = false;
-            for (var k = 0; k < startedUpdates.length; k++) {
-                var id = startedUpdates[k];
-                var updateCache = updates[id].updates;
-                if (updateCache.length > 0) {
-                    var update = updateCache[0];
-
-                    var tempTick = update.frame;
-                    var started = update.frame == tempTick;
-                    while (update.frame == tempTick) {
-                        processedUpdates++;
-                        //console.log(JSON.stringify(update)+"   : "+processedUpdates+", client tick "+client.tick);
-                        doUpdate(update);
-
-                        updateCache.shift();
-                        if (updateCache.length == 0)
-                            break;
-
-                        update = updateCache[0];
-                    }
-                }
-            }
-        }
-
-        if (appliedUpdates.length > 0)
-            client.updates.push({name: "APPLY", frame: client.tick, updateMeta: appliedUpdates});
-
-        if (stoppedUpdates.length > 0)
-            client.updates.push({name: "STOP_APPLYING", frame: client.tick, updateMeta: stoppedUpdates});*/
-
-        /*if (!client.isHost) {         
-            var found = false;
-            for (var k = 0; k < startedUpdates.length; k++) {
-                var id = startedUpdates[k];
-            }
-        }*/
 
         lastTime = curTime;
 
