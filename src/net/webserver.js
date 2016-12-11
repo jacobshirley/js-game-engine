@@ -7,6 +7,8 @@ var MAX_CLIENTS = 64;
 var clientIndices = [];
 var clients = [];
 
+var SEND_RATE = 10;
+
 for (var i = -1; i < MAX_CLIENTS; i++) {
 	clients.push({id: -1, socket: null});
 }
@@ -68,6 +70,6 @@ setInterval(function() {
 		}
 		updates = [];
 	}
-}, 50);
+}, SEND_RATE);
 
 console.log("Running server...");

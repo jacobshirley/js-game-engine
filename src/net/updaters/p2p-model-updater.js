@@ -35,6 +35,8 @@ class P2PModelUpdater extends UpdateProcessor{
 				//console.log("got apply");
 	        	let applied = update.updateMeta;
 	            this.processingClients = this.processingClients.concat(applied);
+
+	            return Networking.CONTINUE_DELETE;
 	        }
 		} else if (update.name == "STOP_APPLYING") {
 			if (!this.networking.isHost) {
@@ -42,6 +44,7 @@ class P2PModelUpdater extends UpdateProcessor{
 	            toBeFinished.forEach((i) => {
 	            	this.processingClients.splice(this.processingClients.indexOf(i), 1);
 	            });
+	            return Networking.CONTINUE_DELETE;
 	        }
         } else {
         	this.didProcess = true;

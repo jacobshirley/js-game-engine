@@ -150,6 +150,10 @@ class ConnectionHandler {
 		return this.serverData[id].id != -1;
 	}
 
+	getClient(id) {
+		return this.serverData[id];
+	}
+
 	addClient(id) {
 		if (!this.clientExists(id)) {
 			this.serverData[id].id = id;
@@ -223,8 +227,16 @@ class UpdateProcessorStream {
 	}
 
 	iterate() {
+		var last = null;
 	    while (true) {
 	        let update = this.updateIterator.next();
+
+	        if (last != null) {
+	        	if (last == update) {
+	        		console.log("Problem with "+update.name);
+	        		break;
+	        	}
+	        }
 
 	        let state = -1;
 	        for (let processor of this.updaters) {
@@ -238,7 +250,7 @@ class UpdateProcessorStream {
 	        	} else if (state == Networking.SKIP && state2 != state) {
 	        		state = state2;
 	        	} else if (state == Networking.CONTINUE_DELETE && (state2 == Networking.BREAK_DELETE || state2 == Networking.BREAK_NOTHING)) {
-	        		throw "Processor conflict: CONTINUE_DELETE and BREAK_* are incompatible. Please check your updaters.";
+	        		throw "Processor conflict with update "+update.name+": CONTINUE_DELETE and BREAK_* are incompatible. Please check your updaters.";
 	        	} else if (state == Networking.BREAK_NOTHING && state2 == Networking.BREAK_DELETE) {
 	        		state = state2;
 	        	}
@@ -249,6 +261,8 @@ class UpdateProcessorStream {
 
 	        if (state == Networking.BREAK_DELETE || state == Networking.BREAK_NOTHING)
 	        	break;
+
+	        last = update;
 
 	        if (!this.updateIterator.hasNext())
 	            break;
@@ -281,8 +295,6 @@ class Networking extends Timer{
 
 		this.connectionHandler = new ConnectionHandler(this.connection, maxConnections);
 
-		this.maxConnections = maxConnections;
-
 		this.updateProcessors = [];
 
 		this.init();
@@ -298,6 +310,7 @@ class Networking extends Timer{
 		for (let processor of this.updateProcessors) {
 			processor.modify(update);
 		}
+
 		this.connectionHandler.queue(update);
 	}
 
@@ -326,7 +339,7 @@ class Networking extends Timer{
 	processUpdates(id, updaters) {
         let updateCache = this.connectionHandler.serverData[id].updateData;
 
-        for (let processor of this.updateProcessors) {
+        for (let processor of updaters) {
 	    	processor.startProcess(id);
 	    }
 
@@ -334,7 +347,7 @@ class Networking extends Timer{
         	new UpdateProcessorStream(new JSONUpdateIterator(updateCache, false), updaters).iterate();
         }
 
-        for (let processor of this.updateProcessors) {
+        for (let processor of updaters) {
 	    	processor.endProcess(id);
 	    }
 	}
