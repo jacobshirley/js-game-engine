@@ -1,5 +1,5 @@
 function Ball(props) {
-
+    this.props = props;
 	//properties
 	
 	var size = props.size||{radius: 0};
@@ -55,4 +55,8 @@ function Ball(props) {
 
     mesh.userData.body = body;
     mesh.userData.static = mass == 0;
+}
+
+Ball.prototype.copy = function() {
+    return new Ball(this.props);
 }

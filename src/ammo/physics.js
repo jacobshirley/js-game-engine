@@ -40,7 +40,7 @@ Physics.prototype.destroy = function() {
     this.objects = [];
 }
 
-Physics.prototype.reset = function() {
+Physics.prototype.reset = function(keepOldObjects) {
     this.destroy();
     this.init();
 }

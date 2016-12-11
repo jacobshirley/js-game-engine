@@ -76,3 +76,7 @@ function Block(props) {
     mesh.userData.body = body;
     mesh.userData.static = mass == 0;
 }
+
+Block.prototype.copy = function() {
+    return new Block(this.props);
+}

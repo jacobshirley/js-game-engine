@@ -47,6 +47,10 @@ class Timer {
 		this.intervals = [];
 	}
 
+	static get currentTime() {
+		return new Date().getTime();
+	}
+
 	reset() {
 		this.tick = 0;
 		this.delays = [];
@@ -103,8 +107,9 @@ class Timer {
 			}
 		}
 
-		if (delayed)
+		if (delayed) {
 			return false;
+		}
 
 		return main();
 	}

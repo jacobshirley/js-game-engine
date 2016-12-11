@@ -1,6 +1,5 @@
 var _trans = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
 
-
 function World(renderer, physics) {
     this.objects = [];
     this.renderer = renderer;
@@ -20,6 +19,7 @@ World.prototype.destroy = function() {
 
 World.prototype.addObject = function(object) {
     this.objects.push(object);
+    
     this.renderer.addObject(object);
     this.physics.addObject(object);
 }

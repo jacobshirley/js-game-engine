@@ -87,15 +87,6 @@ function main() {
         }*/
     }
 
-    function reset(state) {
-        world.removeAll(true);
-        physics.reset();
-        createAll();
-
-        if (state)
-            physics.setAllObjectProps(state);
-    }
-
     createAll();
 
     function setDebugText(text) {
@@ -109,113 +100,11 @@ function main() {
     var INPUT_DELAY = 5; // in ticks
     var RESET_DELAY = 100; // in ticks
 
-    var INPUT_DELAY_THRESHOLD = 10; // in ticks
-
-    class PhysicsWorldUpdater extends UpdateProcessor {
-        constructor(networking, world) {
-            super(networking);
-            this.world = world;
-            this.physics = this.world.physics;
-            this.initUpdate = null;
-            this.initialised = false;
-        }
-
-        reset() {
-            //TODO reset the physics simulation state
-        }
-
-        process(update) {
-            if (update.name == "CONNECTION") {
-                if (this.networking.isHost) {
-                    var p = this.physics.getAllObjectProps();
-                    reset(p);
-
-                    this.networking.addUpdate({name: "INIT", target: update.id, startFrame: this.networking.tick, props: p});
-                }
-
-                return Networking.CONTINUE_DELETE;
-            } else if (update.name == "INIT") {
-                this.initUpdate = update;
-                if (update.target == this.networking.id) {
-                    console.log("init");
-                    this.initialised = true;
-
-                    var pickingPhysicsUpdater = new PickingPhysicsUpdater(this.networking, this.physics);
-                    var frameUpdater = new FrameUpdater(this.networking, [pickingPhysicsUpdater], false);
-                    var serverControlUpdater = new FrameUpdater(networking, [new P2PModelUpdater(this.networking, frameUpdater)], true);
-
-                    var delay = new Delay(DELAY);
-                    delay.on('finished', () => {
-                        this.networking.setTick(this.initUpdate.startFrame);
-                        reset(this.initUpdate.props);
-                        this.networking.addUpdateProcessor(serverControlUpdater);
-                        this.networking.addUpdateProcessor(new NetHaltUpdater(networking));
-                    });
-
-                    this.networking.addDelay(delay);
-                } else {
-                    if (!this.networking.isHost) {
-                        console.log("init other person");
-                        this.networking.setTick(this.initUpdate.startFrame);
-                        reset(this.initUpdate.props);
-                    }
-                }
-                return Networking.CONTINUE_DELETE;
-            }
-
-            if (!this.initialised)
-                return Networking.CONTINUE_DELETE;
-
-            return Networking.SKIP;
-        }
-    }
-
-    function getTime() {
-        return new Date().getTime();
-    }
-
-    var start = getTime();
-
-    class NetHaltUpdater extends UpdateProcessor {
-        constructor(networking) {
-            super(networking);
-        }
-
-        process(update) {
-            if (update.name == "SERVER_TICK") {
-                if (this.networking.isHost)
-                    return Networking.CONTINUE_DELETE;
-
-                if (update.tick == this.networking.tick) {
-                    let deltaTime = getTime() - update.time;
-                    let deltaTicks = deltaTime/UPDATE_INTERVAL;
-
-                    setDebugText("DELTA: time: "+deltaTime+", ticks: "+deltaTicks);
-                    if (deltaTicks < INPUT_DELAY_THRESHOLD) {
-                        var delay = new Delay(INPUT_DELAY_THRESHOLD);
-
-                        delay.on('finished', () => {
-                            console.log("Finished delay");
-                            this.networking.setTick(this.networking.tick-INPUT_DELAY_THRESHOLD);
-                        });
-
-                        this.networking.addDelay(delay);
-                    }
-                    return Networking.CONTINUE_DELETE;
-                }
-
-                return Networking.BREAK_NOTHING;
-            }
-
-            return Networking.SKIP;
-        }
-    }
-
-    networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world));
+    networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
 
     networking.addInterval(new Interval(INPUT_DELAY, () => {
         if (networking.isHost) {
-            networking.addUpdate({name: "SERVER_TICK", time: getTime(), tick: networking.tick});
+            networking.addUpdate({name: "SERVER_TICK", time: Timer.currentTime, tick: networking.tick});
         }
         networking.sendUpdates();
     }));
@@ -228,15 +117,14 @@ function main() {
 
     function animate() {
         if (networking.update()) {
-            if (networking.isHost)
-                setDebugText("Tick: "+networking.tick+", updates: ");
+            //if (networking.isHost)
+            setDebugText("Tick: "+networking.tick+", updates: ");
+
             world.update(10);
         }
     }
 
     setInterval(animate, UPDATE_INTERVAL);
 }
-
-var _trans2 = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
 
 main();
