@@ -1,5 +1,5 @@
 class FrameUpdater extends UpdateProcessor {
-    constructor(networking, subupdater, checkTick) {
+    constructor(networking, subupdaters, checkTick) {
         super(networking);
 
         this.checkTick = checkTick;
@@ -7,18 +7,20 @@ class FrameUpdater extends UpdateProcessor {
         this.clientId = -1;
         this.lastFrame = -1;
 
-        this.subupdater = subupdater;
+        this.subupdaters = subupdaters;
     }
 
     preprocess() {
-        this.subupdater.preprocess();
+        for (let subupdater of this.subupdaters)
+            subupdater.preprocess();
     }
 
     startProcess(clientId) {
         this.clientId = clientId;
         this.lastFrame = -1;
 
-        this.subupdater.startProcess(clientId);
+        for (let subupdater of this.subupdaters)
+            subupdater.startProcess(clientId);
     }
 
     process(update) {
@@ -31,7 +33,8 @@ class FrameUpdater extends UpdateProcessor {
             }
 
             if (this.lastFrame == update.frame) {
-                this.subupdater.process(update);
+                for (let subupdater of this.subupdaters)
+                    subupdater.process(update);
                 return Networking.CONTINUE_DELETE;
             } else {
                 return Networking.BREAK_NOTHING;
@@ -52,10 +55,15 @@ class FrameUpdater extends UpdateProcessor {
     }
 
     endProcess(clientId) {
-        this.subupdater.endProcess(clientId);
+        for (let subupdater of this.subupdaters)
+            subupdater.endProcess(clientId);
     }
 
     postprocess() {
-        this.subupdater.postprocess();
+        for (let subupdater of this.subupdaters)
+            subupdater.postprocess();
+    }
+
+    modify(update) {
     }
 }

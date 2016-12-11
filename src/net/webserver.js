@@ -1,20 +1,36 @@
 var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({ port: 8080 });
 
+var SERVER_INDEX = 0;
 var MAX_CLIENTS = 64;
 
 var clientIndices = [];
 var clients = [];
 
+for (var i = -1; i < MAX_CLIENTS; i++) {
+	clients.push({id: -1, socket: null});
+}
+
 var updates = [];
 
 wss.on('connection', function connection(ws) {
-	clients.push(ws);
+	var newId = -1;
+	for (var i = 0; i < clients.length; i++) {
+		if (i != SERVER_INDEX) {
+			if (clients[i].id == -1) {
+				newId = i;
+				break;
+			}
+		}
+	}
 
-	ws.id = clients.length-1;
-	//ws.send());
+	ws.id = newId;
 
-	updates.push({from: -1, data: {name: "CONNECTED", isHost: ws.id == 0, id: ws.id}});
+	clientIndices.push(ws.id);
+	clients[ws.id].id = ws.id;
+	clients[ws.id].socket = ws;
+
+	updates.push({from: SERVER_INDEX, data: {name: "CONNECTED", isHost: clientIndices.length == 1, clients: clientIndices, id: ws.id}});
 
 	ws.on('message', function incoming(message) {
 		//console.log("got message "+message);
@@ -22,9 +38,12 @@ wss.on('connection', function connection(ws) {
 	});
 
 	ws.on('close', function (ws2) {
-		for (var i = 0; i < clients.length; i++) {
-			if (clients[i] == ws) {
-				clients.splice(i, 1);
+		for (var i = 0; i < clientIndices.length; i++) {
+			var index = clientIndices[i];
+			if (clients[index].socket == ws) {
+				clients[index].id = -1;
+				clients[index].socket = null;
+				clientIndices.splice(i, 1);
 				break;
 			}
 		}
@@ -33,8 +52,8 @@ wss.on('connection', function connection(ws) {
 
 setInterval(function() {
 	if (updates.length > 0) {
-		for (var i = 0; i < clients.length; i++) {
-			var client = clients[i];
+		for (var i = 0; i < clientIndices.length; i++) {
+			var client = clients[clientIndices[i]];
 			var us = [];
 
 			updates.forEach(function(update) {
@@ -44,7 +63,7 @@ setInterval(function() {
 			});
 			if (us.length > 0) {
 				var str = JSON.stringify(us);
-				client.send(str);
+				client.socket.send(str);
 			}
 		}
 		updates = [];

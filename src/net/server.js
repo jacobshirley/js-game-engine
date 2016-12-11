@@ -19,13 +19,6 @@ Client.prototype.queueUpdates = function(queue) {
 	this.receivedUpdates = this.receivedUpdates.concat(this.serverUpdates.splice(0));
 }
 
-class Connection {
-	constructor() {
-		this.id = -1;
-		this.updates = [];
-	}
-}
-
 function WebClient(name) {
 	this.ws = new WebSocket("ws://192.168.1.75:8080/");
 	this.connected = false;

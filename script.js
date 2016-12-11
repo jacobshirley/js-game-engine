@@ -5,7 +5,7 @@ function toRadians(degrees) {
 function main() {
     var renderer, physics, world;
     var server = new Server();
-    var client = new WebClient("SDFSDF");
+    var client = new WebSocketConnection("ws://192.168.1.75:8080/");
     var networking = new Networking(client, 64);
 
     //server.addClient(client);
@@ -134,6 +134,10 @@ function main() {
             this.initialised = false;
         }
 
+        reset() {
+            //TODO reset the physics simulation state
+        }
+
         process(update) {
             console.log(update);
             if (update.name == "CONNECTION") {
@@ -153,15 +157,15 @@ function main() {
                     this.initUpdate = update;
 
                     var delay = new Delay(DELAY, true);
-                    delay.onFinished = () => {
+                    delay.on('finished', () => {
                         this.networking.tick = this.initUpdate.startFrame;
                         reset(this.initUpdate.props);
-                    }
+                    });
                     this.networking.addDelay(delay);
 
                     var pickingPhysicsUpdater = new PickingPhysicsUpdater(this.networking, this.physics);
-                    var frameUpdater = new FrameUpdater(this.networking, pickingPhysicsUpdater, false);
-                    var serverControlUpdater = new FrameUpdater(networking, new ServerControllerUpdater(this.networking, frameUpdater), true);
+                    var frameUpdater = new FrameUpdater(this.networking, [pickingPhysicsUpdater], false);
+                    var serverControlUpdater = new FrameUpdater(networking, [new P2PModelUpdater(this.networking, frameUpdater)], true);
 
                     this.networking.addUpdateProcessor(serverControlUpdater);
                 }
@@ -183,9 +187,7 @@ function main() {
 
     networking.addInterval(new Interval(RESET_DELAY, function() {
         if (networking.isHost) {
-            console.log("sending");
-            var p = physics.getAllObjectProps();
-            networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: p});
+            networking.addUpdate({frame: networking.tick, name: "RESET_ALL", props: physics.getAllObjectProps()});
         }
     }));
 

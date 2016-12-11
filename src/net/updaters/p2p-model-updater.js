@@ -1,4 +1,4 @@
-class ServerControllerUpdater extends UpdateProcessor{
+class P2PModelUpdater extends UpdateProcessor{
 	constructor(networking, subupdater) {
 		super(networking);
 
@@ -32,7 +32,6 @@ class ServerControllerUpdater extends UpdateProcessor{
 	process(update) {
 		if (update.name == "APPLY") {
 			if (!this.networking.isHost) {
-				//console.log("applying "+this.networking.tick);
 	        	let applied = update.updateMeta;
 	            this.processingClients = this.processingClients.concat(applied);
 	        }
@@ -47,7 +46,6 @@ class ServerControllerUpdater extends UpdateProcessor{
         	this.didProcess = true;
 
             if (this.networking.isHost && this.processingClientIndex == -1) {
-            	//console.log("applying "+this.networking.tick);
             	this.processingClientIndex = this.processingClients.length;
                 this.appliedUpdates.push(this.clientId);
                 this.processingClients.push(this.clientId);
@@ -70,21 +68,14 @@ class ServerControllerUpdater extends UpdateProcessor{
 	postprocess() {
 		let networking = this.networking;
 		if (networking.isHost) {
-			//console.log(this.appliedUpdates.length);
 		    if (this.appliedUpdates.length > 0)
 		        networking.addUpdate({name: "APPLY", frame: networking.tick, updateMeta: this.appliedUpdates});
 
 		    if (this.stoppedUpdates.length > 0)
 		        networking.addUpdate({name: "STOP_APPLYING", frame: networking.tick, updateMeta: this.stoppedUpdates});
 		} else {
-			//console.log("start");
 			for (let client of this.processingClients) {
-				let updates = networking.clientData[client+1].updates;
-				if (updates.length > 0) {
-					//console.log("client: "+client);
-					this.subupdater.startProcess(client);
-					networking.processUpdates(updates, [this.subupdater]);
-				}
+				networking.processUpdates(client, [this.subupdater]);
 			}
 		}
 
