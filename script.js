@@ -4,7 +4,6 @@ function toRadians(degrees) {
 
 function main() {
     var renderer, physics, world;
-    var server = new Server();
     var client = new WebSocketConnection("ws://192.168.1.75:8080/");
     var networking = new Networking(client, 64);
 
@@ -77,30 +76,20 @@ function main() {
                 props.rotation = {x: (Math.PI/2), y: (Math.PI/2), z: 0};
             }
             world.addObject(new Block(props));
-            //server.addObject(new Block(props));
         }
+
+        /*var RADIAN = 2*Math.PI;
+
+        for (var i = 0; i < 30; i++) {
+            var props = {size: {width: 500/3, height: 500, length: 50},
+                        color: 0xFFFFFF, mass:10};
+
+            props.position = {x: Math.random()*300, y: Math.random()*300, z: Math.random()*300};
+            props.rotation = {x: Math.random()*RADIAN, y: Math.random()*RADIAN, z: Math.random()*RADIAN};
+
+            world.addObject(new Block(props));
+        }*/
     }
-
-    var RADIAN = 2*Math.PI;
-
-    for (var i = 0; i < 30; i++) {
-        var props = {size: {width: 500/3, height: 500, length: 50},
-                    color: 0xFFFFFF, mass:10};
-
-        props.position = {x: Math.random()*300, y: Math.random()*300, z: Math.random()*300};
-        props.rotation = {x: Math.random()*RADIAN, y: Math.random()*RADIAN, z: Math.random()*RADIAN};
-
-        //world.addObject(new Block(props));
-    }
-
-    var props = {size: {radius: 200},
-                 color: 0xFFFFFF, mass:50};
-
-    props.position = {x: 700, y: 300, z: 300};
-    
-    //world.addObject(new Ball(props));
-    //
-    
 
     function reset(state) {
         world.removeAll(true);
@@ -123,7 +112,7 @@ function main() {
     
     var DELAY = 100; // in ticks
     var INPUT_DELAY = 15; // in ticks
-    var RESET_DELAY = INPUT_DELAY*6; // in ticks
+    var RESET_DELAY = 100; // in ticks
 
     class PhysicsWorldUpdater extends UpdateProcessor {
         constructor(networking, world) {
@@ -139,7 +128,6 @@ function main() {
         }
 
         process(update) {
-            console.log(update);
             if (update.name == "CONNECTION") {
                 var p = this.physics.getAllObjectProps();
                 reset(p);
@@ -156,18 +144,17 @@ function main() {
 
                     this.initUpdate = update;
 
-                    var delay = new Delay(DELAY, true);
-                    delay.on('finished', () => {
-                        this.networking.tick = this.initUpdate.startFrame;
-                        reset(this.initUpdate.props);
-                    });
-                    this.networking.addDelay(delay);
-
                     var pickingPhysicsUpdater = new PickingPhysicsUpdater(this.networking, this.physics);
                     var frameUpdater = new FrameUpdater(this.networking, [pickingPhysicsUpdater], false);
                     var serverControlUpdater = new FrameUpdater(networking, [new P2PModelUpdater(this.networking, frameUpdater)], true);
 
-                    this.networking.addUpdateProcessor(serverControlUpdater);
+                    var delay = new Delay(DELAY, true);
+                    delay.on('finished', () => {
+                        this.networking.setTick(this.initUpdate.startFrame);
+                        reset(this.initUpdate.props);
+                        this.networking.addUpdateProcessor(serverControlUpdater);
+                    });
+                    this.networking.addDelay(delay);
                 }
                 return Networking.CONTINUE_DELETE;
             }

@@ -37,9 +37,6 @@ class ConnectionUpdateProcessor extends UpdateProcessor {
 	}
 
 	process(update) {
-		if (update.frame)
-			return Networking.SKIP;
-
 		let networking = this.networking;
 
         if (update.name == "CONNECTED") {
@@ -56,9 +53,9 @@ class ConnectionUpdateProcessor extends UpdateProcessor {
 	        }
 
             return Networking.CONTINUE_DELETE;
-        }
+        } else if (!this.initialised)
+			return Networking.CONTINUE_DELETE;
 
-        //should never get this far
         return Networking.SKIP;
 	}
 }
@@ -138,13 +135,6 @@ class ConnectionHandler {
 		});
 	}
 
-	getClientData(id) {
-		for (let i = 0; i < this.serverDataIndices.length; i++) {
-			let index = this.serverDataIndices[i];
-			let internalData = this.internalData[index];
-		}
-	}
-
 	init() {
 		this.serverData = [];
 		this.internalData = [];
@@ -156,11 +146,17 @@ class ConnectionHandler {
 		}
 	}
 
-	addClient(id) {
-		this.serverData[id].id = id;
-		this.internalData[id].id = id;
+	clientExists(id) {
+		return this.serverData[id].id != -1;
+	}
 
-		this.serverDataIndices.push(id);
+	addClient(id) {
+		if (!this.clientExists(id)) {
+			this.serverData[id].id = id;
+			this.internalData[id].id = id;
+
+			this.serverDataIndices.push(id);
+		}
 	}
 
 	removeClient(id) {
@@ -197,7 +193,8 @@ class ConnectionHandler {
 	}
 
 	flush() {
-		this.connection.send(this.localUpdates.splice(0));
+		if (this.localUpdates.length > 0)
+			this.connection.send(this.localUpdates.splice(0));
 	}
 }
 
@@ -234,7 +231,9 @@ class UpdateProcessorStream {
 	        	let state2 = processor.process(update);
 
 	        	if (state == -1) {
-	        		console.log("WARNING: This processor returns no value. Defaulting to Networking.SKIP for this update...");
+	        		if (!state2)
+	        			console.log("WARNING: "+(typeof processor)+" returns no value. Defaulting to Networking.SKIP for this update...");
+
 	        		state = state2 || Networking.SKIP;
 	        	} else if (state == Networking.SKIP && state2 != state) {
 	        		state = state2;
@@ -324,11 +323,11 @@ class Networking extends Timer{
 		this.connectionHandler.flush();
 	}
 
-	processUpdates(clientId, updaters) {
-        let updateCache = this.connectionHandler.serverData[clientId].updateData;
+	processUpdates(id, updaters) {
+        let updateCache = this.connectionHandler.serverData[id].updateData;
 
         for (let processor of this.updateProcessors) {
-	    	processor.startProcess(clientId);
+	    	processor.startProcess(id);
 	    }
 
         if (updateCache.length > 0) {
@@ -336,7 +335,7 @@ class Networking extends Timer{
         }
 
         for (let processor of this.updateProcessors) {
-	    	processor.endProcess(clientId);
+	    	processor.endProcess(id);
 	    }
 	}
 
@@ -348,16 +347,17 @@ class Networking extends Timer{
 
 		    for (let processor of this.updateProcessors) {
 		    	processor.preprocess();
-		    };
+		    }
 
 		    for (let i = 0; i < serverDataIndices.length; i++) {
 		    	let id = serverDataIndices[i];
+
 		        this.processUpdates(id, this.updateProcessors);
 		    }
 
 		    for (let processor of this.updateProcessors) {
 		    	processor.postprocess();
-		    };
+		    }
 
 			return true;
 		});

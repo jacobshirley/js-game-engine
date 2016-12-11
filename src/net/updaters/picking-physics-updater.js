@@ -6,6 +6,7 @@ class PickingPhysicsUpdater extends UpdateProcessor {
     }
 
     process(update) {
+        console.log(update);
         if (update.name == "CREATE") {
             var body = this.physics.objects[update.index];
             var pos = update.data;

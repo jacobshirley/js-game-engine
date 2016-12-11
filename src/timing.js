@@ -65,6 +65,21 @@ class Timer {
 		this.intervals.push(interval);
 	}
 
+	setTick(newTick, reset) {
+		this.tick = newTick;
+		for (let delay of this.delays) {
+			delay.start();
+		}
+
+		for (let interval of this.intervals) {
+			interval.reset();
+		}
+	}
+
+	getTick() {
+		return this.tick;
+	}
+
 	update(main) {
 		this.tick++;
 

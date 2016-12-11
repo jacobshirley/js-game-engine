@@ -32,6 +32,7 @@ class P2PModelUpdater extends UpdateProcessor{
 	process(update) {
 		if (update.name == "APPLY") {
 			if (!this.networking.isHost) {
+				//console.log("got apply");
 	        	let applied = update.updateMeta;
 	            this.processingClients = this.processingClients.concat(applied);
 	        }
