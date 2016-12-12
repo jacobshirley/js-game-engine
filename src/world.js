@@ -5,6 +5,8 @@ function World(renderer, physics) {
     this.renderer = renderer;
     this.physics = physics;
     this.picker = new Picker(this.renderer, this.physics);
+    this.clock = new THREE.Clock();
+    this.clock.start();
 }
 
 World.prototype.init = function() {
@@ -31,10 +33,12 @@ World.prototype.removeAll = function(destroy) {
     this.objects = [];
 }
 
-World.prototype.update = function(speed) {
+World.prototype.update = function() {
     this.picker.update();
 
-    this.physics.update(speed);
+    var delta = this.clock.getDelta();
+
+    this.physics.update(1/60);
 
     this.objects.forEach(function(obj) {
         body = obj.physicsData.body;

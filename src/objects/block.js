@@ -65,9 +65,9 @@ function Block(props) {
     var rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, sideShape, localInertia);
     var body = new Ammo.btRigidBody(rbInfo);
 
-    body.setDamping(0, 0.2);
+    body.setDamping(0, 0.5);
     body.setActivationState(4);
-    body.setFriction(0.6);
+    body.setFriction(0.5);
 
     this.physicsData = {
     	body: body

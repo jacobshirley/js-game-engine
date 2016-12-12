@@ -1,5 +1,6 @@
 function Renderer() {
 	this.orbitControls = null;
+	this.scale = 1;
 	//add object
 	//remove object
 	//
@@ -17,10 +18,10 @@ Renderer.prototype.init = function() {
 	this.raycaster = new THREE.Raycaster();
 	this.scene = new THREE.Scene();
 
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100000);
-    this.camera.position.x = 2000;
-    this.camera.position.y = 1000;
-    this.camera.position.z = 2000;
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000*this.scale);
+    this.camera.position.x = 10*this.scale;
+    this.camera.position.y = 5*this.scale;
+    this.camera.position.z = 10*this.scale;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);

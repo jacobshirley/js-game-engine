@@ -54,7 +54,7 @@ class PhysicsWorldUpdater extends UpdateProcessor {
                     this.reset(this.initUpdate.props);
      
                     this.networking.addUpdateProcessor(serverControlUpdater);
-                    this.networking.addUpdateProcessor(new FrameLockUpdater(this.networking, 10, 10));
+                    this.networking.addUpdateProcessor(new FrameLockUpdater(this.networking, 5, 10));
                 });
 
                 this.networking.addDelay(delay);
