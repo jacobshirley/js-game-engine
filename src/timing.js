@@ -69,6 +69,10 @@ class Timer {
 		this.intervals.push(interval);
 	}
 
+	addSubTimer(timer) {
+		this.subTimers.push(timer);
+	}
+
 	setTick(newTick, reset) {
 		this.tick = newTick;
 		for (let delay of this.delays) {

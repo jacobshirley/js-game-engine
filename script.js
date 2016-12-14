@@ -11,7 +11,7 @@ function main() {
         renderer = new Renderer();
         physics = new Physics();
 
-        world = new World(renderer, physics);
+        world = new World(renderer, physics, networking);
         world.init();
         world.picker.enabled = true;
         world.picker.setNetworking(networking);
@@ -22,10 +22,10 @@ function main() {
         light.position.set(10, 30, 10);
         light.position.multiplyScalar(1.3);
 
-        light.castShadow = true;
+        //light.castShadow = true;
 
-        light.shadow.mapSize.width = 512 * 8;
-        light.shadow.mapSize.height = 512 * 8;
+        light.shadow.mapSize.width = 512;
+        light.shadow.mapSize.height = 512;
 
         var d = 15;
 
@@ -57,7 +57,7 @@ function main() {
         world.addObject(floor);
 
         var w = (1/1.5);
-        for (var i = 0; i < 1*20; i++) {
+        for (var i = 0; i < 1*10; i++) {
             var mod = Math.floor(i/3);
             var height = mod*1;
 
@@ -96,7 +96,7 @@ function main() {
     var FPS = 120;
     var UPDATE_INTERVAL = 1000/FPS;
     
-    var DELAY = 5; // in ticks
+    var DELAY = 8; // in ticks
     var INPUT_DELAY = 5; // in ticks
     var RESET_DELAY = 100; // in ticks
 
@@ -105,6 +105,7 @@ function main() {
     networking.addInterval(new Interval(INPUT_DELAY, () => {
         if (networking.isHost) {
             networking.addUpdate({name: "SERVER_TICK", time: Timer.currentTime, tick: networking.tick});
+            networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
         }
         networking.sendUpdates();
     }));
@@ -116,16 +117,16 @@ function main() {
     }));
 
     function animate() {
-        if (networking.update()) {
+        //if (networking.update()) {
             //if (networking.isHost)
-            setDebugText("Tick: "+networking.tick+", updates: ");
-            world.update();
-        }
+        setDebugText("Tick: "+networking.tick+", fps: "+world.fps+", pps: "+world.pps);
+        world.update();
+        //}
 
         requestAnimationFrame(animate);
     }
 
-    animate();
+    requestAnimationFrame(animate);
 }
 
 main();

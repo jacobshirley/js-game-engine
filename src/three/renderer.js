@@ -19,9 +19,9 @@ Renderer.prototype.init = function() {
 	this.scene = new THREE.Scene();
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000*this.scale);
-    this.camera.position.x = 10*this.scale;
-    this.camera.position.y = 5*this.scale;
-    this.camera.position.z = 10*this.scale;
+    this.camera.position.x = 3*this.scale;
+    this.camera.position.y = 3*this.scale;
+    this.camera.position.z = 3*this.scale;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);

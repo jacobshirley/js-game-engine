@@ -1,59 +1,93 @@
-var _trans = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
+let _trans = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
 
-function World(renderer, physics) {
-    this.objects = [];
-    this.renderer = renderer;
-    this.physics = physics;
-    this.picker = new Picker(this.renderer, this.physics);
-    this.clock = new THREE.Clock();
-    this.clock.start();
-}
+class World {
+    constructor(renderer, physics, networking) {
+        this.objects = [];
+        this.renderer = renderer;
+        this.physics = physics;
+        this.networking = networking;
 
-World.prototype.init = function() {
-    this.renderer.init();
-    this.physics.init();
-}
+        this.picker = new Picker(this.renderer, this.physics);
 
-World.prototype.destroy = function() {
-    this.renderer.destroy();
-    this.physics.destroy();
-}
+        this.clock = new THREE.Clock();
+        this.clock.start();
 
-World.prototype.addObject = function(object) {
-    this.objects.push(object);
-    
-    this.renderer.addObject(object);
-    this.physics.addObject(object);
-}
+        this.time = 0;
+        this.renderTime = 0;
+        this.fps = 0;
+        this.tempFPS = 0;
 
-World.prototype.removeAll = function(destroy) {
-    this.physics.removeAll(destroy);
-    this.renderer.removeAll();
+        this.pps = 0;
+        this.tempPPS = 0;
+    }
 
-    this.objects = [];
-}
+    init() {
+        this.renderer.init();
+        this.physics.init();
+    }
 
-World.prototype.update = function() {
-    this.picker.update();
+    destroy() {
+        this.renderer.destroy();
+        this.physics.destroy();
+    }
 
-    var delta = this.clock.getDelta();
+    addObject(object) {
+        this.objects.push(object);
+        
+        this.renderer.addObject(object);
+        this.physics.addObject(object);
+    }
 
-    this.physics.update(1/60);
+    removeAll(destroy) {
+        this.physics.removeAll(destroy);
+        this.renderer.removeAll();
 
-    this.objects.forEach(function(obj) {
-        body = obj.physicsData.body;
-        mesh = obj.renderData.mesh;
-        var mS = body.getMotionState();
-        if (mS) {
-            mS.getWorldTransform(_trans);
+        this.objects = [];
+    }
 
-            var origin = _trans.getOrigin();
-            var rotation = _trans.getRotation();
+    update() {
+        let dt = 1/60;
 
-            mesh.position.set(origin.x(), origin.y(), origin.z());
-            mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+        if (this.networking.update()) {
+            while (this.renderTime >= dt) {
+                this.picker.update();
+                
+                this.physics.update(dt);
+
+                this.renderTime -= dt;
+                this.tempPPS++;
+            }
         }
-    });
 
-    this.renderer.render();
+        for (let obj of this.objects) {
+            let body = obj.physicsData.body;
+            let mesh = obj.renderData.mesh;
+            let mS = body.getMotionState();
+            if (mS) {
+                mS.getWorldTransform(_trans);
+
+                let origin = _trans.getOrigin();
+                let rotation = _trans.getRotation();
+
+                mesh.position.set(origin.x(), origin.y(), origin.z());
+                mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+            }
+        }
+
+        this.renderer.render();
+
+        let delta = this.clock.getDelta();
+        this.renderTime += delta;
+        this.time += delta;
+        this.tempFPS++;
+
+        if (this.time >= 1) {
+            this.time = 0;
+            this.fps = this.tempFPS;
+            this.tempFPS = 0;
+
+            this.pps = this.tempPPS;
+            this.tempPPS = 0;
+        }
+    }
 }
