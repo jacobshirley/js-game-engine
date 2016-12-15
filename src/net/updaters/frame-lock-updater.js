@@ -1,7 +1,7 @@
-var start = Timer.currentTime;
+let start = Timer.currentTime;
 
-var FPS = 120;
-var UPDATE_INTERVAL = 1000/FPS;
+let FPS = 120;
+let UPDATE_INTERVAL = 1000/FPS;
 
 class FrameLockUpdater extends UpdateProcessor {
     constructor(networking, frameLockThreshold, frameDelay) {
@@ -22,7 +22,7 @@ class FrameLockUpdater extends UpdateProcessor {
 
                 //setDebugText("DELTA: time: "+deltaTime+", ticks: "+deltaTicks);
                 if (deltaTicks < this.frameLockThreshold) {
-                    var delay = new Delay(this.frameDelay);
+                    let delay = new Delay(this.frameDelay);
 
                     delay.on('finished', () => {
                         this.networking.setTick(this.networking.tick-this.frameDelay);

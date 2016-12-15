@@ -1,4 +1,4 @@
-var _trans3 = new Ammo.btTransform();
+let _trans3 = new Ammo.btTransform();
 
 class Physics extends Timer {
     constructor() {
@@ -43,32 +43,32 @@ class Physics extends Timer {
     }
 
     createBlock(props) {
-        var size = props.size||{width:0, height:0, length:0};
-        var position = props.position||{x: 0, y: 0, z: 0};
-        var rotation = props.rotation||{x: 0, y: 0, z: 0};
-        var mass = props.mass||0;
+        let size = props.size||{width:0, height:0, length:0};
+        let position = props.position||{x: 0, y: 0, z: 0};
+        let rotation = props.rotation||{x: 0, y: 0, z: 0};
+        let mass = props.mass||0;
 
-        var size2 = new Ammo.btVector3(size.width, size.height, size.length);
-        var sideShape = new Ammo.btBoxShape(size2);
+        let size2 = new Ammo.btVector3(size.width, size.height, size.length);
+        let sideShape = new Ammo.btBoxShape(size2);
         sideShape.setMargin(0.05);
 
-        var sideTransform = new Ammo.btTransform();
+        let sideTransform = new Ammo.btTransform();
         sideTransform.setIdentity();
         sideTransform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
 
-        var quat = new Ammo.btQuaternion();
+        let quat = new Ammo.btQuaternion();
         quat.setEulerZYX(rotation.z, rotation.y, rotation.x);
         sideTransform.setRotation(quat);
 
-        var isDynamic = mass !== 0;
-        var localInertia = new Ammo.btVector3(0, 0, 0);
+        let isDynamic = mass !== 0;
+        let localInertia = new Ammo.btVector3(0, 0, 0);
 
         if (isDynamic)
             sideShape.calculateLocalInertia(mass, localInertia);
 
-        var myMotionState = new Ammo.btDefaultMotionState(sideTransform);
-        var rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, sideShape, localInertia);
-        var body = new Ammo.btRigidBody(rbInfo);
+        let myMotionState = new Ammo.btDefaultMotionState(sideTransform);
+        let rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, sideShape, localInertia);
+        let body = new Ammo.btRigidBody(rbInfo);
 
         body.setDamping(0, 0.2);
         body.setActivationState(4);
@@ -87,22 +87,22 @@ class Physics extends Timer {
     }
 
     setAllObjectProps(props) {
-    	var objects = this.objects;
-    	props.forEach(function(prop) {
-            var body = objects[prop.index];
+    	let objects = this.objects;
+    	for (let prop of props) {
+            let body = objects[prop.index];
 
-            var aVel = prop.aVel;
-            var lVel = prop.lVel;
+            let aVel = prop.aVel;
+            let lVel = prop.lVel;
 
-            var pos = prop.pos;
-            var rot = prop.rot;
+            let pos = prop.pos;
+            let rot = prop.rot;
 
             _trans3 = body.getWorldTransform();
             //body.getMotionState().getWorldTransform(_trans3);  
             
             _trans3.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
-            var rows = rot;
-            var matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
+            let rows = rot;
+            let matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
                                           rows[1].x, rows[1].y, rows[1].z,
                                           rows[2].x, rows[2].y, rows[2].z);
 
@@ -110,30 +110,30 @@ class Physics extends Timer {
 
             body.setAngularVelocity(new Ammo.btVector3(aVel.x, aVel.y, aVel.z));
             body.setLinearVelocity(new Ammo.btVector3(lVel.x, lVel.y, lVel.z));
-    	});
+    	}
     }
 
     getObjectProps(index) {
-        var body = this.objects[index];
-        var aVel = body.getAngularVelocity();
-        var lVel = body.getLinearVelocity();
+        let body = this.objects[index];
+        let aVel = body.getAngularVelocity();
+        let lVel = body.getLinearVelocity();
 
         _trans3 = body.getWorldTransform();
 
-        var origin = _trans3.getOrigin();
-        var rotation = _trans3.getRotation();
+        let origin = _trans3.getOrigin();
+        let rotation = _trans3.getRotation();
 
-        var basis = _trans3.getBasis();
-        var rows = [];
-        for (var i = 0; i < 3; i++) {
-            var row = basis.getRow(i);
+        let basis = _trans3.getBasis();
+        let rows = [];
+        for (let i = 0; i < 3; i++) {
+            let row = basis.getRow(i);
             rows.push({x: row.x(), y: row.y(), z: row.z()});
         }
 
-        var pos = {x: origin.x(), y: origin.y(), z: origin.z()};
-        var rot = rows;
+        let pos = {x: origin.x(), y: origin.y(), z: origin.z()};
+        let rot = rows;
 
-        var result = {index: index, 
+        let result = {index: index, 
                          pos: pos,
                          rot: rot,
                          aVel: {x: aVel.x(), y: aVel.y(), z: aVel.z()}, 
@@ -144,25 +144,24 @@ class Physics extends Timer {
     }
 
     getAllObjectProps() {
-    	var props = [];
-    	var c = 0;
-        var _this = this;
+    	let props = [];
+    	let c = 0;
 
-    	this.objects.forEach(function(body) {
-    		props.push(_this.getObjectProps(c));
+    	for (let body of this.objects) {
+    		props.push(this.getObjectProps(c));
     		c++;
-    	});
+    	}
 
     	return props;
     }
 
     removeAll(destroy) {
-        var world = this.dynamicsWorld;
-        this.objects.forEach(function (obj) {
+        let world = this.dynamicsWorld;
+        for (let obj of this.objects) {
             world.removeRigidBody(obj);
             if (destroy)
                 Ammo.destroy(obj);
-        });
+        }
         this.objects = [];
     }
 

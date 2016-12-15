@@ -43,8 +43,10 @@ class Interval {
 class Timer {
 	constructor() {
 		this.tick = 0;
+		this.time = this.oldTime = Timer.currentTime;
 		this.delays = [];
 		this.intervals = [];
+		this.parent = null;
 	}
 
 	static get currentTime() {
@@ -69,8 +71,8 @@ class Timer {
 		this.intervals.push(interval);
 	}
 
-	addSubTimer(timer) {
-		this.subTimers.push(timer);
+	tether(parent) {
+		this.parent = parent;
 	}
 
 	setTick(newTick, reset) {
@@ -89,7 +91,13 @@ class Timer {
 	}
 
 	update(main) {
-		this.tick++;
+		if (!this.parent) {
+			this.tick++;
+			this.time += Timer.currentTime-this.oldTime;
+		} else {
+			this.tick = this.parent.tick;
+			this.time = this.parent.time;
+		}
 
 		let delayed = false;
 		let c = 0;

@@ -1,3 +1,6 @@
+let INPUT_DELAY = 5; // in ticks
+let RESET_DELAY = 100; // in ticks
+
 class PhysicsWorldUpdater extends UpdateProcessor {
     constructor(networking, world, netDelay) {
         super(networking);
@@ -11,7 +14,7 @@ class PhysicsWorldUpdater extends UpdateProcessor {
     }
 
     reset(state) {
-        var newObjects = [];
+        let newObjects = [];
 
         for (let object of this.world.objects) {
             newObjects.push(object.copy());
@@ -31,7 +34,7 @@ class PhysicsWorldUpdater extends UpdateProcessor {
     process(update) {
         if (update.name == "CONNECTION") {
             if (this.networking.isHost) {
-                var p = this.physics.getAllObjectProps();
+                let p = this.physics.getAllObjectProps();
                 this.reset(p);
 
                 this.networking.addUpdate({name: "INIT", target: update.id, startFrame: this.networking.tick, props: p});
@@ -42,16 +45,18 @@ class PhysicsWorldUpdater extends UpdateProcessor {
             this.initUpdate = update;
             if (update.target == this.networking.id) {
                 console.log("init");
-                this.initialised = true;
+                
 
-                var pickingPhysicsUpdater = new PickingPhysicsUpdater(this.networking, this.physics);
-                var frameUpdater = new FrameUpdater(this.networking, [pickingPhysicsUpdater], false);
-                var serverControlUpdater = new FrameUpdater(this.networking, [new P2PModelUpdater(this.networking, frameUpdater)], true);
+                let pickingPhysicsUpdater = new PickingPhysicsUpdater(this.networking, this.physics);
+                let frameUpdater = new FrameUpdater(this.networking, [pickingPhysicsUpdater], false);
+                let serverControlUpdater = new FrameUpdater(this.networking, [new P2PModelUpdater(this.networking, frameUpdater)], true);
 
-                var delay = new Delay(this.netDelay);
+                let delay = new Delay(this.netDelay);
                 delay.on('finished', () => {
                     this.networking.setTick(this.initUpdate.startFrame);
                     this.reset(this.initUpdate.props);
+
+                    this.initialised = true;
      
                     this.networking.addUpdateProcessor(serverControlUpdater);
                     this.networking.addUpdateProcessor(new FrameLockUpdater(this.networking, 5, 10));

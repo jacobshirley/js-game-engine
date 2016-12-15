@@ -1,11 +1,15 @@
 let _trans = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
 
-class World {
+class World extends Timer {
     constructor(renderer, physics, networking) {
+        super();
+
         this.objects = [];
         this.renderer = renderer;
         this.physics = physics;
         this.networking = networking;
+
+        this.networking.tether(this);
 
         this.picker = new Picker(this.renderer, this.physics);
 
@@ -14,6 +18,7 @@ class World {
 
         this.time = 0;
         this.renderTime = 0;
+        this.physicsTime = 0;
         this.fps = 0;
         this.tempFPS = 0;
 
@@ -46,48 +51,55 @@ class World {
     }
 
     update() {
-        let dt = 1/60;
+        return super.update(() => {
+            let dt = 1/60;
 
-        if (this.networking.update()) {
-            while (this.renderTime >= dt) {
-                this.picker.update();
-                
-                this.physics.update(dt);
+            console.log(this.time+", "+this.networking.time);
 
-                this.renderTime -= dt;
-                this.tempPPS++;
+            if (this.networking.update()) {
+                while (this.physicsTime >= dt) {
+                    this.picker.update();
+                    
+                    this.physics.update(dt);
+
+                    this.physicsTime -= dt;
+                    this.tempPPS++;
+                }
             }
-        }
 
-        for (let obj of this.objects) {
-            let body = obj.physicsData.body;
-            let mesh = obj.renderData.mesh;
-            let mS = body.getMotionState();
-            if (mS) {
-                mS.getWorldTransform(_trans);
+            for (let obj of this.objects) {
+                let body = obj.physicsData.body;
+                let mesh = obj.renderData.mesh;
+                let mS = body.getMotionState();
+                if (mS) {
+                    mS.getWorldTransform(_trans);
 
-                let origin = _trans.getOrigin();
-                let rotation = _trans.getRotation();
+                    let origin = _trans.getOrigin();
+                    let rotation = _trans.getRotation();
 
-                mesh.position.set(origin.x(), origin.y(), origin.z());
-                mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+                    mesh.position.set(origin.x(), origin.y(), origin.z());
+                    mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+                }
             }
-        }
 
-        this.renderer.render();
+            this.renderer.render();
 
-        let delta = this.clock.getDelta();
-        this.renderTime += delta;
-        this.time += delta;
-        this.tempFPS++;
+            let delta = this.clock.getDelta();
+            this.renderTime += delta;
+            this.physicsTime += delta;
+            this.time += delta;
+            this.tempFPS++;
 
-        if (this.time >= 1) {
-            this.time = 0;
-            this.fps = this.tempFPS;
-            this.tempFPS = 0;
+            if (this.time >= 1) {
+                this.time = 0;
+                this.fps = this.tempFPS;
+                this.tempFPS = 0;
 
-            this.pps = this.tempPPS;
-            this.tempPPS = 0;
-        }
+                this.pps = this.tempPPS;
+                this.tempPPS = 0;
+            }
+
+            return true;
+        });
     }
 }

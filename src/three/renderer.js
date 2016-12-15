@@ -68,10 +68,11 @@ class Renderer {
 	}
 
 	removeAll() {
-		var scene = this.scene;
+		let scene = this.scene;
 		this.meshes.forEach(function (child) {
 			scene.remove(child);
 		});
+		this.meshes = [];
 		//scene.children = [];
 	}
 

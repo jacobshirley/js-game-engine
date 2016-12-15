@@ -25,7 +25,11 @@ class UpdateProcessor {
 
 	}
 
-	modify(update) {
+	encode(update) {
+
+	}
+
+	decode(update) {
 
 	}
 }
@@ -75,7 +79,7 @@ class Connection extends EventEmitter {
 		this.connected = false;
 	}
 
-	isConnected() {
+	get isConnected() {
 		return this.connected;
 	}
 
@@ -111,6 +115,31 @@ class WebSocketConnection extends Connection {
 	send(data) {
 		if (this.connected)
 			this.ws.send(JSON.stringify(data));
+	}
+}
+
+class LocalConnection extends Connection {
+	constructor(latency, packetLossChance) {
+		super();
+
+		this.connected = true;
+
+		this.latency = latency;
+		this.packetLossChance = packetLossChance;
+
+		this.data = [];
+		this.data.push({from: SERVER_INDEX, data: {name: "CONNECTED", isHost: true, clients: [1], id: 1}});
+
+		setInterval(() => {
+			if (Math.random() > this.packetLossChance) {
+				this.emit('message', this.data);
+			}
+			this.data = [];
+		}, this.latency);
+	}
+
+	send(data) {
+		this.data = this.data.concat({from: 1, data: data});
 	}
 }
 
@@ -167,12 +196,7 @@ class ConnectionHandler {
 		this.serverData[id] = new ClientData(-1);
 		this.internalData[id] = new ClientData(-1);
 
-		for (let i = 0; i < this.serverDataIndices.length; i++) {
-			if (this.serverDataIndices[i] == id) {
-				this.serverDataIndices.splice(i, 1);
-				break;
-			}
-		}
+		this.serverDataIndices.splice(this.serverDataIndices.indexOf(id), 1);
 	}
 
 	recv() {
@@ -220,6 +244,12 @@ class JSONUpdateIterator {
 	}
 }
 
+class ProtobufUpdateIterator {
+	constructor(updateData) {
+		this.updateData = updateData;
+	}
+}
+
 class UpdateProcessorStream {
 	constructor(updateIterator, updaters) {
 		this.updateIterator = updateIterator;
@@ -231,10 +261,10 @@ class UpdateProcessorStream {
 	    while (true) {
 	        let update = this.updateIterator.next();
 
-	        if (last != null) {
+	        if (last != null) { //debug code
 	        	if (last == update) {
-	        		console.log("Problem with "+update.name);
-	        		break;
+	        		//console.log("Problem with "+update.name+", "+this.updaters[1].process(update));
+	        		//break;
 	        	}
 	        }
 
@@ -308,7 +338,7 @@ class Networking extends Timer{
 
 	addUpdate(update) {
 		for (let processor of this.updateProcessors) {
-			processor.modify(update);
+			processor.encode(update);
 		}
 
 		this.connectionHandler.queue(update);

@@ -100,8 +100,6 @@ function main() {
     var INPUT_DELAY = 5; // in ticks
     var RESET_DELAY = 100; // in ticks
 
-    networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
-
     networking.addInterval(new Interval(INPUT_DELAY, () => {
         if (networking.isHost) {
             networking.addUpdate({name: "SERVER_TICK", time: Timer.currentTime, tick: networking.tick});
@@ -116,10 +114,12 @@ function main() {
         }
     }));
 
+    networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
+
     function animate() {
         //if (networking.update()) {
             //if (networking.isHost)
-        setDebugText("Tick: "+networking.tick+", fps: "+world.fps+", pps: "+world.pps);
+        setDebugText("Tick: "+networking.tick+", render time: "+world.renderTime+", fps: "+world.fps+", pps: "+world.pps);
         world.update();
         //}
 
