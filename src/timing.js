@@ -39,15 +39,31 @@ class Delay extends EventEmitter{
 	}
 }
 
-class Interval {
-	constructor(ticks, func) {
-		this.tick = 0;
-		this.ticks = ticks;
-		this.func = func;
+class Interval extends EventEmitter {
+	constructor(target, useTicks) {
+		super();
+
+		this.target = target;
+		this.inc = 0;
+		this.useTicks = useTicks;
+		this.timer = null;
 	}
 
 	reset() {
-		this.tick = 0;
+		this.inc = 0;
+	}
+
+	update() {
+		let i = this.timer.deltaTime;
+		if (this.useTicks)
+			i = 1;
+
+		//console.log(this.inc);
+		this.inc += i;
+		if (this.inc >= this.target) {
+			this.emit('complete');
+			this.reset();
+		}
 	}
 }
 
@@ -88,7 +104,9 @@ class Timer {
 	}
 
 	addInterval(interval) {
+		interval.timer = this;
 		interval.reset();
+
 		this.intervals.push(interval);
 	}
 
@@ -167,11 +185,7 @@ class Timer {
 		}
 
 		for (let interval of this.intervals) {
-			interval.tick++;
-			if (interval.tick == interval.ticks) {
-				interval.reset();
-				interval.func();
-			}
+			interval.update();
 		}
 
 		if (delayed) {

@@ -100,21 +100,25 @@ function main() {
     var INPUT_DELAY = 5; // in ticks
     var RESET_DELAY = 100; // in ticks
 
-    networking.addInterval(new Interval(INPUT_DELAY, () => {
+    let sendInterval = new Interval(INPUT_DELAY, true);
+    sendInterval.on('complete', () => {
         if (networking.isHost) {
             networking.addUpdate({name: "SERVER_TICK", time: Timer.currentTime, tick: networking.tick});
             networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
         }
         networking.sendUpdates();
-    }));
+    });
 
-    networking.addInterval(new Interval(RESET_DELAY, () => {
+    let resetInterval = new Interval(1000, false);
+    resetInterval.on('complete', () => {
         if (networking.isHost) {
+            console.log("22");
             //networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
         }
-    }));
+    });
 
-    world.setUpdateRate(30);
+    networking.addInterval(sendInterval);
+    networking.addInterval(resetInterval);
 
     networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
 

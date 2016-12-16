@@ -13,7 +13,6 @@ class FrameLockUpdater extends UpdateProcessor {
 
     process(update) {
         if (update.name == "SERVER_TICK") {
-            console.log("SDFSDF");
             if (this.networking.isHost)
                 return Networking.CONTINUE_DELETE;
 
