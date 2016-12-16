@@ -45,15 +45,15 @@ class PhysicsWorldUpdater extends UpdateProcessor {
             this.initUpdate = update;
             if (update.target == this.networking.id) {
                 console.log("init");
-                
 
                 let pickingPhysicsUpdater = new PickingPhysicsUpdater(this.networking, this.physics);
                 let frameUpdater = new FrameUpdater(this.networking, [pickingPhysicsUpdater], false);
                 let serverControlUpdater = new FrameUpdater(this.networking, [new P2PModelUpdater(this.networking, frameUpdater)], true);
 
-                let delay = new Delay(this.netDelay);
-                delay.on('finished', () => {
-                    this.networking.setTick(this.initUpdate.startFrame);
+                let delay = new Delay(this.netDelay, false);
+                delay.on('complete', () => {
+                    console.log("COMPLETE");
+                    this.world.setTick(this.initUpdate.startFrame);
                     this.reset(this.initUpdate.props);
 
                     this.initialised = true;

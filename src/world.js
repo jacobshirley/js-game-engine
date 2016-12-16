@@ -1,5 +1,7 @@
 let _trans = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
 
+const DEFAULT_UPDATE_RATE = 1000/60;
+
 class World extends Timer {
     constructor(renderer, physics, networking) {
         super();
@@ -16,7 +18,6 @@ class World extends Timer {
         this.clock = new THREE.Clock();
         this.clock.start();
 
-        this.time = 0;
         this.renderTime = 0;
         this.physicsTime = 0;
         this.fps = 0;
@@ -24,6 +25,8 @@ class World extends Timer {
 
         this.pps = 0;
         this.tempPPS = 0;
+
+        this.updateInterval = DEFAULT_UPDATE_RATE;
     }
 
     init() {
@@ -50,19 +53,26 @@ class World extends Timer {
         this.objects = [];
     }
 
+    setUpdateRate(updateRate) {
+        this.updateInterval = 1000/updateRate;
+    }
+
+    getDebugString() {
+        return "Tick: "+this.tick+", Time (ms): "+this.time+", FPS: "+this.fps+", PPS: "+this.pps;
+    }
+
     update() {
         return super.update(() => {
-            let dt = 1/60;
-
-            console.log(this.time+", "+this.networking.time);
+            let dt = this.updateInterval/1000.0;
 
             if (this.networking.update()) {
-                while (this.physicsTime >= dt) {
+                //console.log(this.time+", "+this.networking.time);
+                while (this.physicsTime >= this.updateInterval) {
                     this.picker.update();
                     
                     this.physics.update(dt);
 
-                    this.physicsTime -= dt;
+                    this.physicsTime -= this.updateInterval;
                     this.tempPPS++;
                 }
             }
@@ -84,18 +94,16 @@ class World extends Timer {
 
             this.renderer.render();
 
-            let delta = this.clock.getDelta();
-            this.renderTime += delta;
-            this.physicsTime += delta;
-            this.time += delta;
+            this.renderTime += this.deltaTime; 
+            this.physicsTime += this.deltaTime;
             this.tempFPS++;
 
-            if (this.time >= 1) {
-                this.time = 0;
+            if (this.renderTime >= 1000) {
                 this.fps = this.tempFPS;
-                this.tempFPS = 0;
-
                 this.pps = this.tempPPS;
+
+                this.renderTime = 0;
+                this.tempFPS = 0;
                 this.tempPPS = 0;
             }
 

@@ -1,10 +1,11 @@
 class Delay extends EventEmitter{
-	constructor(delay) {
+	constructor(delay, useTicks) {
 		super();
 
 		this.timer = null;
 
 		this.delay = delay;
+		this.useTicks = useTicks;
 
 		this.marker = 0;
 	}
@@ -13,16 +14,26 @@ class Delay extends EventEmitter{
 		if (!this.timer)
 			return;
 
-		this.marker = this.timer.tick + this.delay;
+		let i = this.timer.delayTick;
+		if (!this.useTicks)
+			i = this.timer.delayTime;
+
+		this.marker = i + this.delay;
 	}
 
-	isDone() {
+	complete() {
 		if (!this.timer)
 			return false;
+
+		let i = this.timer.delayTick;
+		if (!this.useTicks)
+			i = this.timer.delayTime;
 		
-		let bool = this.timer.tick >= this.marker;
+		let bool = i >= this.marker;
 		if (bool) {
-			this.emit('finished');
+			this.emit('complete');
+		} else {
+			this.emit('delay');
 		}
 		return bool;
 	}
@@ -43,10 +54,20 @@ class Interval {
 class Timer {
 	constructor() {
 		this.tick = 0;
-		this.time = this.oldTime = Timer.currentTime;
+		this.time = 0;
+		this.oldTime = 0;
+		this.deltaTime = 0;
+
+		this.delayTick = 0;
+		this.delayTime = 0;
 		this.delays = [];
+
 		this.intervals = [];
+
 		this.parent = null;
+		this.tetherables = [];
+
+		this.maxUpdates = 0;
 	}
 
 	static get currentTime() {
@@ -71,15 +92,30 @@ class Timer {
 		this.intervals.push(interval);
 	}
 
-	tether(parent) {
-		this.parent = parent;
+	addTetherable(child) {
+		this.tetherables.push(child);
 	}
 
-	setTick(newTick, reset) {
+	removeTetherable(child) {
+		this.tetherables.splice(this.tetherables.indexOf(child), 1);
+	}
+
+	tether(parent) {
+		this.parent = parent;
+		this.parent.addTetherable(this);
+	}
+
+	untether() {
+		this.parent = null;
+		this.parent.removeTetherable(this);
+	}
+
+	setMaxUpdates(max) {
+		this.maxUpdates = max;
+	}
+
+	setTick(newTick) {
 		this.tick = newTick;
-		for (let delay of this.delays) {
-			//delay.start();
-		}
 
 		for (let interval of this.intervals) {
 			interval.reset();
@@ -91,19 +127,38 @@ class Timer {
 	}
 
 	update(main) {
+		let curTime = Timer.currentTime;
+
+		if (this.oldTime == 0) {
+			this.oldTime = curTime;
+		}
+		this.deltaTime = curTime-this.oldTime;
+
 		if (!this.parent) {
 			this.tick++;
-			this.time += Timer.currentTime-this.oldTime;
+			this.time += this.deltaTime;
 		} else {
 			this.tick = this.parent.tick;
 			this.time = this.parent.time;
 		}
 
+		this.oldTime += this.deltaTime;
+
+		for (let tetherable of this.tetherables) {
+			tetherable.tick = this.tick;
+			tetherable.time = this.time;
+		}
+
 		let delayed = false;
 		let c = 0;
 
+		if (this.delays.length > 0) {
+			this.delayTick++;
+			this.delayTime += this.deltaTime;
+		}
+
 		for (let delay of this.delays) {
-			if (!delay.isDone())
+			if (!delay.complete())
 				delayed = true;
 			else {
 				this.delays.splice(c, 1);

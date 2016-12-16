@@ -13,18 +13,18 @@ class FrameLockUpdater extends UpdateProcessor {
 
     process(update) {
         if (update.name == "SERVER_TICK") {
+            console.log("SDFSDF");
             if (this.networking.isHost)
                 return Networking.CONTINUE_DELETE;
 
             if (update.tick == this.networking.tick) {
-                let deltaTime = Timer.currentTime - update.time;
-                let deltaTicks = deltaTime/UPDATE_INTERVAL;
+                let deltaTime = this.networking.time - update.time;
 
                 //setDebugText("DELTA: time: "+deltaTime+", ticks: "+deltaTicks);
-                if (deltaTicks < this.frameLockThreshold) {
-                    let delay = new Delay(this.frameDelay);
+                if (deltaTime < this.frameLockThreshold) {
+                    let delay = new Delay(this.frameDelay, false);
 
-                    delay.on('finished', () => {
+                    delay.on('complete', () => {
                         this.networking.setTick(this.networking.tick-this.frameDelay);
                     });
 

@@ -96,7 +96,7 @@ function main() {
     var FPS = 120;
     var UPDATE_INTERVAL = 1000/FPS;
     
-    var DELAY = 8; // in ticks
+    var DELAY = 500;
     var INPUT_DELAY = 5; // in ticks
     var RESET_DELAY = 100; // in ticks
 
@@ -114,12 +114,14 @@ function main() {
         }
     }));
 
+    world.setUpdateRate(30);
+
     networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
 
     function animate() {
         //if (networking.update()) {
             //if (networking.isHost)
-        setDebugText("Tick: "+networking.tick+", render time: "+world.renderTime+", fps: "+world.fps+", pps: "+world.pps);
+        setDebugText(world.getDebugString());
         world.update();
         //}
 

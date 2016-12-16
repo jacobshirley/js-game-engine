@@ -24,7 +24,7 @@ class FrameUpdater extends UpdateProcessor {
     }
 
     process(update) {
-        console.log(update);
+        //console.log(update);
         if (!update.frame)
             return Networking.SKIP;
         
