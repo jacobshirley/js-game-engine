@@ -152,7 +152,7 @@ class Timer extends Counter{
 	}
 
 	static get currentTime() {
-		return new Date().getTime();
+		return Date.now();
 	}
 
 	reset() {

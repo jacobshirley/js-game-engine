@@ -117,7 +117,7 @@ function main() {
 
     networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
 
-    world.setMaxFrames(30);
+    world.setMaxFrames(33);
     world.setUpdateRate(100);
 
     function animate() {
