@@ -11,8 +11,6 @@ class World extends Timer {
         this.physics = physics;
         this.networking = networking;
 
-        //this.networking.tether(this);
-
         this.picker = new Picker(this.renderer, this.physics);
 
         this.renderTime = 0;
@@ -61,12 +59,13 @@ class World extends Timer {
     update() {
         return super.update(() => {
             const dt = this.updateInterval/1000.0;
-            
-            while (this.updateTime >= this.updateInterval) {
+            let t = 0;
+            while (this.updateTime >= this.updateInterval && t < 7) {
                 if (this.networking.update()) {
                     this.picker.update();
                     
                     this.physics.update(dt);
+                    t++;
                 }
                 this.updateTime -= this.updateInterval;
                 this.tempUPS++;

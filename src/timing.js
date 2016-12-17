@@ -61,7 +61,6 @@ class MaxFrameDelay extends Delay{
 	constructor(frameInterval) {
 		super();
 
-		this.timeStore = 0;
 		this.frameInterval = frameInterval;
 	}
 
@@ -70,16 +69,16 @@ class MaxFrameDelay extends Delay{
 	}
 
 	start() {
-
+		this.then = this.counter.time;
 	}
 
 	complete() {
-		let delta = this.counter.deltaTime;
-		this.timeStore += delta;
+		let now = this.counter.time;
+		let delta = now-this.then;
 
-		if (this.timeStore >= this.frameInterval) {
+		if (delta > this.frameInterval) {
 			this.emit('complete');
-			this.timeStore = 0;
+			this.then = now - (delta % this.frameInterval);
 			return true;
 		}
 		return false;
@@ -147,6 +146,9 @@ class Timer extends Counter{
 
 		this.parent = null;
 		this.tetherables = [];
+
+		this.delayed = false;
+		this.paused = false;
 	}
 
 	static get currentTime() {
@@ -192,7 +194,7 @@ class Timer extends Counter{
 	}
 
 	setMaxFrames(max) {
-		this.addDelay(new MaxFrameDelay(1000/max));
+		this.addDelay(new MaxFrameDelay(1000.0/max));
 	}
 
 	setTick(newTick) {
@@ -208,39 +210,42 @@ class Timer extends Counter{
 	}
 
 	update(main) {
-		this.delayCounter.update();
+		//if (!this.paused) {
+			this.delayCounter.update();
 
-		let delayed = false;
-		let delays = this.delays;
+			let delayed = false;
+			let delays = this.delays;
 
-		for (var i = 0; i < delays.length; i++) {
-			let delay = delays[i];
-			if (!delay.complete())
-				delayed = true;
-			else if (delay.delete()) {
-				delays.splice(i, 1);
+			for (var i = 0; i < delays.length; i++) {
+				let delay = delays[i];
+				if (!delay.complete())
+					delayed = true;
+				else if (delay.delete()) {
+					delays.splice(i, 1);
+				}
 			}
-		}
 
-		if (delayed)
-			return false;
+			if (delayed)
+				return false;
 
-		if (!this.parent) {
-			super.update();
-		} else {
-			this.tick = this.parent.tick;
-			this.time = this.parent.time;
-		}
+			if (!this.parent) {
+				super.update();
+			} else {
+				this.tick = this.parent.tick;
+				this.time = this.parent.time;
+			}
 
-		for (let tetherable of this.tetherables) {
-			tetherable.tick = this.tick;
-			tetherable.time = this.time;
-		}
+			for (let tetherable of this.tetherables) {
+				tetherable.tick = this.tick;
+				tetherable.time = this.time;
+			}
 
-		for (let interval of this.intervals) {
-			interval.update();
-		}
+			for (let interval of this.intervals) {
+				interval.update();
+			}
 
-		return main();
+			return main();
+		//}
+		//return false;
 	}
 }

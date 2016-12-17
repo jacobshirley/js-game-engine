@@ -92,9 +92,6 @@ function main() {
     function setDebugText(text) {
         $("#debug").text(text);
     }
-
-    var FPS = 120;
-    var UPDATE_INTERVAL = 1000/FPS;
     
     var DELAY = 200;
     var INPUT_DELAY = 5; // in ticks
@@ -104,7 +101,6 @@ function main() {
     sendInterval.on('complete', () => {
         if (networking.isHost) {
             networking.addUpdate({name: "SERVER_TICK", time: Timer.currentTime, tick: networking.tick});
-            networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
         }
         networking.sendUpdates();
     });
@@ -112,8 +108,7 @@ function main() {
     let resetInterval = new Interval(RESET_DELAY, false);
     resetInterval.on('complete', () => {
         if (networking.isHost) {
-            console.log("22");
-            //networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
+            networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
         }
     });
 
@@ -122,10 +117,8 @@ function main() {
 
     networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
 
-    setTimeout(function() {
-        if (!networking.isHost)
-            world.setMaxFrames(70);
-    }, 3000);
+    world.setMaxFrames(30);
+    world.setUpdateRate(100);
 
     function animate() {
         //if (networking.update()) {
