@@ -96,9 +96,9 @@ function main() {
     var FPS = 120;
     var UPDATE_INTERVAL = 1000/FPS;
     
-    var DELAY = 500;
+    var DELAY = 200;
     var INPUT_DELAY = 5; // in ticks
-    var RESET_DELAY = 100; // in ticks
+    var RESET_DELAY = 5000; // in ms
 
     let sendInterval = new Interval(INPUT_DELAY, true);
     sendInterval.on('complete', () => {
@@ -109,7 +109,7 @@ function main() {
         networking.sendUpdates();
     });
 
-    let resetInterval = new Interval(1000, false);
+    let resetInterval = new Interval(RESET_DELAY, false);
     resetInterval.on('complete', () => {
         if (networking.isHost) {
             console.log("22");
@@ -121,6 +121,11 @@ function main() {
     networking.addInterval(resetInterval);
 
     networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
+
+    setTimeout(function() {
+        if (!networking.isHost)
+            world.setMaxFrames(70);
+    }, 3000);
 
     function animate() {
         //if (networking.update()) {

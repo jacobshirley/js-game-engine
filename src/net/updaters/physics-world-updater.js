@@ -37,7 +37,7 @@ class PhysicsWorldUpdater extends UpdateProcessor {
                 let p = this.physics.getAllObjectProps();
                 this.reset(p);
 
-                this.networking.addUpdate({name: "INIT", target: update.id, startFrame: this.networking.tick, props: p});
+                this.networking.addUpdate({name: "INIT", target: update.id, startFrame: this.networking.tick, time: this.networking.time, props: p});
             }
 
             return Networking.CONTINUE_DELETE;
@@ -50,16 +50,20 @@ class PhysicsWorldUpdater extends UpdateProcessor {
                 let frameUpdater = new FrameUpdater(this.networking, [pickingPhysicsUpdater], false);
                 let serverControlUpdater = new FrameUpdater(this.networking, [new P2PModelUpdater(this.networking, frameUpdater)], true);
 
-                let delay = new Delay(this.netDelay, false);
+                let delay = new IncDelay(this.netDelay, false);
                 delay.on('complete', () => {
                     console.log("COMPLETE");
-                    this.world.setTick(this.initUpdate.startFrame);
+                    this.networking.setTick(this.initUpdate.startFrame);
+                    this.networking.time = this.initUpdate.time;
                     this.reset(this.initUpdate.props);
 
                     this.initialised = true;
      
                     this.networking.addUpdateProcessor(serverControlUpdater);
                     this.networking.addUpdateProcessor(new FrameLockUpdater(this.networking, 5, 10));
+                });
+
+                delay.on('delay', () => {
                 });
 
                 this.networking.addDelay(delay);

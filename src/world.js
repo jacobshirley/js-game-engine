@@ -11,20 +11,17 @@ class World extends Timer {
         this.physics = physics;
         this.networking = networking;
 
-        this.networking.tether(this);
+        //this.networking.tether(this);
 
         this.picker = new Picker(this.renderer, this.physics);
 
-        this.clock = new THREE.Clock();
-        this.clock.start();
-
         this.renderTime = 0;
-        this.physicsTime = 0;
+        this.updateTime = 0;
         this.fps = 0;
         this.tempFPS = 0;
 
-        this.pps = 0;
-        this.tempPPS = 0;
+        this.ups = 0;
+        this.tempUPS = 0;
 
         this.updateInterval = DEFAULT_UPDATE_RATE;
     }
@@ -58,23 +55,21 @@ class World extends Timer {
     }
 
     getDebugString() {
-        return "Tick: "+this.tick+", Time (ms): "+this.time+", FPS: "+this.fps+", PPS: "+this.pps;
+        return "Tick: "+this.networking.tick+", Time (ms): "+this.networking.time+", FPS: "+this.fps+", UPS: "+this.ups;
     }
 
     update() {
         return super.update(() => {
-            let dt = this.updateInterval/1000.0;
-
-            if (this.networking.update()) {
-                //console.log(this.time+", "+this.networking.time);
-                while (this.physicsTime >= this.updateInterval) {
+            const dt = this.updateInterval/1000.0;
+            
+            while (this.updateTime >= this.updateInterval) {
+                if (this.networking.update()) {
                     this.picker.update();
                     
                     this.physics.update(dt);
-
-                    this.physicsTime -= this.updateInterval;
-                    this.tempPPS++;
                 }
+                this.updateTime -= this.updateInterval;
+                this.tempUPS++;
             }
 
             for (let obj of this.objects) {
@@ -95,16 +90,16 @@ class World extends Timer {
             this.renderer.render();
 
             this.renderTime += this.deltaTime; 
-            this.physicsTime += this.deltaTime;
+            this.updateTime += this.deltaTime;
             this.tempFPS++;
 
             if (this.renderTime >= 1000) {
                 this.fps = this.tempFPS;
-                this.pps = this.tempPPS;
+                this.ups = this.tempUPS;
 
                 this.renderTime = 0;
                 this.tempFPS = 0;
-                this.tempPPS = 0;
+                this.tempUPS = 0;
             }
 
             return true;

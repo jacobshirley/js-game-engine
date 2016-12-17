@@ -1,8 +1,26 @@
-class Delay extends EventEmitter{
-	constructor(delay, useTicks) {
+class Delay extends EventEmitter {
+	constructor() {
 		super();
 
-		this.timer = null;
+		this.counter = null;
+	}
+
+	delete() {
+		return true;
+	}
+
+	start() {
+
+	}
+
+	complete() {
+
+	}
+}
+
+class IncDelay extends Delay{
+	constructor(delay, useTicks) {
+		super();
 
 		this.delay = delay;
 		this.useTicks = useTicks;
@@ -11,23 +29,23 @@ class Delay extends EventEmitter{
 	}
 
 	start() {
-		if (!this.timer)
+		if (!this.counter)
 			return;
 
-		let i = this.timer.delayTick;
+		let i = this.counter.tick;
 		if (!this.useTicks)
-			i = this.timer.delayTime;
+			i = this.counter.time;
 
 		this.marker = i + this.delay;
 	}
 
 	complete() {
-		if (!this.timer)
+		if (!this.counter)
 			return false;
 
-		let i = this.timer.delayTick;
+		let i = this.counter.tick;
 		if (!this.useTicks)
-			i = this.timer.delayTime;
+			i = this.counter.time;
 		
 		let bool = i >= this.marker;
 		if (bool) {
@@ -39,6 +57,35 @@ class Delay extends EventEmitter{
 	}
 }
 
+class MaxFrameDelay extends Delay{
+	constructor(frameInterval) {
+		super();
+
+		this.timeStore = 0;
+		this.frameInterval = frameInterval;
+	}
+
+	delete() {
+		return false;
+	}
+
+	start() {
+
+	}
+
+	complete() {
+		let delta = this.counter.deltaTime;
+		this.timeStore += delta;
+
+		if (this.timeStore >= this.frameInterval) {
+			this.emit('complete');
+			this.timeStore = 0;
+			return true;
+		}
+		return false;
+	}
+}
+
 class Interval extends EventEmitter {
 	constructor(target, useTicks) {
 		super();
@@ -46,7 +93,7 @@ class Interval extends EventEmitter {
 		this.target = target;
 		this.inc = 0;
 		this.useTicks = useTicks;
-		this.timer = null;
+		this.counter = null;
 	}
 
 	reset() {
@@ -54,11 +101,10 @@ class Interval extends EventEmitter {
 	}
 
 	update() {
-		let i = this.timer.deltaTime;
+		let i = this.counter.deltaTime;
 		if (this.useTicks)
 			i = 1;
 
-		//console.log(this.inc);
 		this.inc += i;
 		if (this.inc >= this.target) {
 			this.emit('complete');
@@ -67,23 +113,40 @@ class Interval extends EventEmitter {
 	}
 }
 
-class Timer {
+class Counter {
 	constructor() {
-		this.tick = 0;
+		this._oldTime = 0;
 		this.time = 0;
-		this.oldTime = 0;
+		this.tick = 0;
 		this.deltaTime = 0;
+	}
 
-		this.delayTick = 0;
-		this.delayTime = 0;
+	update() {
+		this.tick++;
+
+		if (this.tick == 1) {
+			this._oldTime = Timer.currentTime;
+		}
+
+		let curTime = Timer.currentTime;
+		this.deltaTime = curTime-this._oldTime;
+		this._oldTime = curTime;
+
+		this.time += this.deltaTime;
+	}
+}
+
+class Timer extends Counter{
+	constructor() {
+		super();
+
+		this.delayCounter = new Counter();
 		this.delays = [];
 
 		this.intervals = [];
 
 		this.parent = null;
 		this.tetherables = [];
-
-		this.maxUpdates = 0;
 	}
 
 	static get currentTime() {
@@ -97,14 +160,14 @@ class Timer {
 	}
 
 	addDelay(delay) {
-		delay.timer = this;
+		delay.counter = this.delayCounter;
 		delay.start();
 
 		this.delays.push(delay);
 	}
 
 	addInterval(interval) {
-		interval.timer = this;
+		interval.counter = this;
 		interval.reset();
 
 		this.intervals.push(interval);
@@ -128,8 +191,8 @@ class Timer {
 		this.parent.removeTetherable(this);
 	}
 
-	setMaxUpdates(max) {
-		this.maxUpdates = max;
+	setMaxFrames(max) {
+		this.addDelay(new MaxFrameDelay(1000/max));
 	}
 
 	setTick(newTick) {
@@ -145,51 +208,37 @@ class Timer {
 	}
 
 	update(main) {
-		let curTime = Timer.currentTime;
+		this.delayCounter.update();
 
-		if (this.oldTime == 0) {
-			this.oldTime = curTime;
+		let delayed = false;
+		let delays = this.delays;
+
+		for (var i = 0; i < delays.length; i++) {
+			let delay = delays[i];
+			if (!delay.complete())
+				delayed = true;
+			else if (delay.delete()) {
+				delays.splice(i, 1);
+			}
 		}
-		this.deltaTime = curTime-this.oldTime;
+
+		if (delayed)
+			return false;
 
 		if (!this.parent) {
-			this.tick++;
-			this.time += this.deltaTime;
+			super.update();
 		} else {
 			this.tick = this.parent.tick;
 			this.time = this.parent.time;
 		}
-
-		this.oldTime += this.deltaTime;
 
 		for (let tetherable of this.tetherables) {
 			tetherable.tick = this.tick;
 			tetherable.time = this.time;
 		}
 
-		let delayed = false;
-		let c = 0;
-
-		if (this.delays.length > 0) {
-			this.delayTick++;
-			this.delayTime += this.deltaTime;
-		}
-
-		for (let delay of this.delays) {
-			if (!delay.complete())
-				delayed = true;
-			else {
-				this.delays.splice(c, 1);
-			}
-			c++;
-		}
-
 		for (let interval of this.intervals) {
 			interval.update();
-		}
-
-		if (delayed) {
-			return false;
 		}
 
 		return main();

@@ -21,13 +21,14 @@ class FrameLockUpdater extends UpdateProcessor {
 
                 //setDebugText("DELTA: time: "+deltaTime+", ticks: "+deltaTicks);
                 if (deltaTime < this.frameLockThreshold) {
-                    let delay = new Delay(this.frameDelay, false);
+                    let delay = new IncDelay(this.frameDelay, false);
 
                     delay.on('complete', () => {
-                        this.networking.setTick(this.networking.tick-this.frameDelay);
+                        //console.log("SDFSDF");
+                        //this.networking.setTick(this.networking.tick-this.frameDelay);
                     });
 
-                    this.networking.addDelay(delay);
+                   // this.networking.addDelay(delay);
                 }
                 return Networking.CONTINUE_DELETE;
             }
