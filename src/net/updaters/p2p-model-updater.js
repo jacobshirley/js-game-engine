@@ -49,7 +49,7 @@ class P2PModelUpdater extends UpdateProcessor{
         } else {
         	this.didProcess = true;
 
-            if (this.networking.isHost && this.processingClientIndex == -1) {
+            if (this.networking.isHost && this.processingClientIndex == -1 && this.clientId != this.networking.id) {
             	this.processingClientIndex = this.processingClients.length;
                 this.appliedUpdates.push(this.clientId);
                 this.processingClients.push(this.clientId);

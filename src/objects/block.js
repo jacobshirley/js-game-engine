@@ -41,41 +41,19 @@ class Block {
     	this.renderData = {
     		mesh: mesh
     	};
+    }
 
-    	//physics
-
-        let size2 = new Ammo.btVector3(size.width, size.height, size.length);
-        let sideShape = new Ammo.btBoxShape(size2);
-        sideShape.setMargin(0.05);
-
-        let sideTransform = new Ammo.btTransform();
-        sideTransform.setIdentity();
-        sideTransform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-
-        let quat = new Ammo.btQuaternion();
-        quat.setEulerZYX(rotation.z, rotation.y, rotation.x);
-        sideTransform.setRotation(quat);
-
-        let isDynamic = mass !== 0;
-        let localInertia = new Ammo.btVector3(0, 0, 0);
-
-        if (isDynamic)
-            sideShape.calculateLocalInertia(mass, localInertia);
-
-        let myMotionState = new Ammo.btDefaultMotionState(sideTransform);
-        let rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, sideShape, localInertia);
-        let body = new Ammo.btRigidBody(rbInfo);
-
-        body.setDamping(0, 0.5);
-        body.setActivationState(4);
-        body.setFriction(0.5);
+    init(physics) {
+        let body = physics.createBlock(this.props);
 
         this.physicsData = {
-        	body: body
+            body: body
         };
 
+        let mesh = this.renderData.mesh;
+
         mesh.userData.body = body;
-        mesh.userData.static = mass == 0;
+        mesh.userData.static = this.props.mass == 0;
     }
 
     copy() {

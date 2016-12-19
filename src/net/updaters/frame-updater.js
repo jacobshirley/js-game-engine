@@ -1,13 +1,13 @@
 class FrameUpdater extends UpdateProcessor {
-    constructor(networking, subupdaters, checkTick) {
+    constructor(networking, subupdaters, allowPastUpdates) {
         super(networking);
-
-        this.checkTick = checkTick;
 
         this.clientId = -1;
         this.lastFrame = -1;
 
         this.subupdaters = subupdaters;
+
+        this.allowPastUpdates = allowPastUpdates;
     }
 
     preprocess() {
@@ -28,7 +28,7 @@ class FrameUpdater extends UpdateProcessor {
         if (!update.frame)
             return Networking.SKIP;
         
-        var upd = () => {
+        let upd = () => {
             if (this.lastFrame == -1) {
                 this.lastFrame = update.frame;
             }
@@ -42,11 +42,12 @@ class FrameUpdater extends UpdateProcessor {
             }
         }
 
-        var cont = this.networking.isHost || !this.checkTick || this.networking.tick == update.frame;
+        let cont = this.networking.isHost || !this.allowPastUpdates || this.networking.tick == update.frame;
         if (cont) {
-            if (this.checkTick && this.clientId != this.networking.id) {
+            let check = this.clientId != this.networking.id || this.networking.isHost;
+            if (this.allowPastUpdates && check) {
                 return upd();
-            } else if (!this.checkTick) {
+            } else if (!this.allowPastUpdates) {
                 return upd();
             }
             return Networking.BREAK_DELETE;

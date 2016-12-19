@@ -59,16 +59,16 @@ function main() {
         var w = (1/1.5);
         for (var i = 0; i < 1*10; i++) {
             var mod = Math.floor(i/3);
-            var height = mod*1;
+            var height = mod*(0.30);
 
             var props = {size: {width: 1/3, height: 1, length: 0.15},
                         color: 0xFFFF00, mass:1};
 
             if (mod % 2 == 1) {
-                props.position = {x: -w+((i%3)*w), y: -1+height, z: w};
+                props.position = {x: -w+((i%3)*w), y: 0.15+height, z: w};
                 props.rotation = {x: (Math.PI/2), y: 0, z: 0};
             } else {
-                props.position = {x: 0, y: -1+height, z: (i%3)*w};
+                props.position = {x: 0, y: 0.15+height, z: (i%3)*w};
                 props.rotation = {x: (Math.PI/2), y: (Math.PI/2), z: 0};
             }
             world.addObject(new Block(props));
@@ -100,7 +100,7 @@ function main() {
     let sendInterval = new Interval(INPUT_DELAY, true);
     sendInterval.on('complete', () => {
         if (networking.isHost) {
-            networking.addUpdate({name: "SERVER_TICK", time: Timer.currentTime, tick: networking.tick});
+            networking.addUpdate({name: "SERVER_TICK", time: networking.time, tick: networking.tick});
         }
         networking.sendUpdates();
     });
@@ -117,15 +117,13 @@ function main() {
 
     networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
 
-    world.setMaxFrames(33);
-    world.setUpdateRate(100);
+    world.setMaxFrames(60);
+    world.setUpdateRate(60);
 
     function animate() {
-        //if (networking.update()) {
-            //if (networking.isHost)
-        setDebugText(world.getDebugString());
         world.update();
-        //}
+
+        setDebugText(world.getDebugString());
 
         requestAnimationFrame(animate);
     }

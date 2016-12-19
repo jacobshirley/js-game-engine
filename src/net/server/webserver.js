@@ -55,13 +55,14 @@ wss.on('connection', function connection(ws) {
 setInterval(function() {
 	if (updates.length > 0) {
 		for (var i = 0; i < clientIndices.length; i++) {
-			var client = clients[clientIndices[i]];
+			var id = clientIndices[i];
+			var client = clients[id];
 			var us = [];
 
 			updates.forEach(function(update) {
-				//if (update.from != client.id) {
+				if (update.from != id) {
 					us.push(update);
-				//}
+				}
 			});
 			if (us.length > 0) {
 				var str = JSON.stringify(us);

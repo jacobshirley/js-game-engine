@@ -32,7 +32,8 @@ class PhysicsWorldUpdater extends UpdateProcessor {
     }
 
     process(update) {
-        if (update.name == "CONNECTION") {
+        if (update.name == "CONNECTED") {
+            console.log("CONNECTED");
             if (this.networking.isHost) {
                 let p = this.physics.getAllObjectProps();
                 this.reset(p);
@@ -61,9 +62,6 @@ class PhysicsWorldUpdater extends UpdateProcessor {
      
                     this.networking.addUpdateProcessor(serverControlUpdater);
                     this.networking.addUpdateProcessor(new FrameLockUpdater(this.networking, 5, 10));
-                });
-
-                delay.on('delay', () => {
                 });
 
                 this.networking.addDelay(delay);

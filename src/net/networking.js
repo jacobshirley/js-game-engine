@@ -52,11 +52,14 @@ class ConnectionUpdateProcessor extends UpdateProcessor {
 
 	            networking.isHost = update.isHost;
 	            networking.id = update.id;
-
-	            networking.addUpdate({name: "CONNECTION", id: update.id});
+	            networking.connectionHandler.id = update.id;
 	        }
 
             return Networking.CONTINUE_DELETE;
+        } else if (update.name == "DISCONNECTED") {
+        	for (let client of update.clients) {
+        		networking.removeClient(client);
+        	}
         } else if (!this.initialised)
 			return Networking.CONTINUE_DELETE;
 
@@ -118,6 +121,12 @@ class WebSocketConnection extends Connection {
 	}
 }
 
+class LocalServer {
+	constructor() {
+		this.clients = [];
+	}
+}
+
 class LocalConnection extends Connection {
 	constructor(latency, packetLossChance) {
 		super();
@@ -146,6 +155,8 @@ class LocalConnection extends Connection {
 class ConnectionHandler {
 	constructor(connection, maxConnections) {
 		this.connection = connection;
+
+		this.id = -1;
 
 		this.maxConnections = maxConnections;
 		this.serverData = [];
@@ -221,8 +232,11 @@ class ConnectionHandler {
 	}
 
 	flush() {
-		if (this.localUpdates.length > 0)
-			this.connection.send(this.localUpdates.splice(0));
+		if (this.localUpdates.length > 0) {
+			let updates = this.localUpdates.splice(0);
+
+			this.connection.send(updates);
+		}
 	}
 }
 
@@ -339,6 +353,11 @@ class Networking extends Timer{
 	addUpdate(update) {
 		for (let processor of this.updateProcessors) {
 			processor.encode(update);
+		}
+
+		if (this.id != -1) {
+			let serverData = this.connectionHandler.serverData[this.id];
+			serverData.updateData.push(update);
 		}
 
 		this.connectionHandler.queue(update);

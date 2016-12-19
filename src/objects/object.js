@@ -3,6 +3,10 @@ class Object {
 		this.props = props;
 	}
 
+	init(physics) {
+		
+	}
+
 	sync() {
 		
 	}

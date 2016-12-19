@@ -35,6 +35,8 @@ class World extends Timer {
     }
 
     addObject(object) {
+        object.init(this.physics);
+
         this.objects.push(object);
         
         this.renderer.addObject(object);
@@ -60,10 +62,9 @@ class World extends Timer {
         return super.update(() => {
             const dt = this.updateInterval/1000.0;
             let t = 0;
-            while (this.updateTime >= this.updateInterval && t < 7) {
+            while (this.updateTime >= this.updateInterval && t < 7) { // < 7 so it can catch up and doesn't go crazy
                 if (this.networking.update()) {
                     this.picker.update();
-                    
                     this.physics.update(dt);
                     t++;
                 }

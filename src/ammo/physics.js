@@ -8,6 +8,7 @@ class Physics extends Timer {
 
         this.objects = [];
     }
+
     init() {
     	this.collisionConfiguration = new Ammo.btDefaultCollisionConfiguration(); // every single |new| currently leaks...
         this.dispatcher = new Ammo.btCollisionDispatcher(this.collisionConfiguration);
@@ -17,6 +18,7 @@ class Physics extends Timer {
         this.dynamicsWorld = new Ammo.btDiscreteDynamicsWorld(this.dispatcher, this.overlappingPairCache, this.solver, this.collisionConfiguration);
         this.dynamicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
     }
+
     destroy() {
     	Ammo.destroy(this.collisionConfiguration);
         Ammo.destroy(this.dispatcher);
@@ -37,9 +39,13 @@ class Physics extends Timer {
     }
 
     addObject(obj) {
-    	this.objects.push(obj.physicsData.body);
+        if (obj instanceof Block) {
+        	this.objects.push(obj.physicsData.body);
 
-    	this.dynamicsWorld.addRigidBody(obj.physicsData.body);
+        	this.dynamicsWorld.addRigidBody(obj.physicsData.body);
+        } else if (obj instanceof Ammo.btPoint2PointConstraint) {
+            this.dynamicsWorld.addConstraint(obj);
+        }
     }
 
     createBlock(props) {
@@ -84,6 +90,24 @@ class Physics extends Timer {
     }
 
     createJoint(props) {
+        let type = props.type||"point2point";
+        let pos = props.position;
+        let body1 = props.body1;
+        let body2 = props.body2;
+
+        if (type == "point2point") {
+            return new Ammo.btPoint2PointConstraint(body1, new Ammo.btVector3(pos.x, pos.y, pos.z));
+        }
+    }
+
+    removeObject(obj) {
+        if (obj instanceof Block) {
+            this.objects.splice(this.objects.indexOf(obj.physicsData.body), 1);
+
+            this.dynamicsWorld.removeRigidBody(obj.physicsData.body);
+        } else if (obj instanceof Ammo.btPoint2PointConstraint) {
+            this.dynamicsWorld.removeConstraint(obj);
+        }
     }
 
     setAllObjectProps(props) {

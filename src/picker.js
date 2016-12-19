@@ -5,7 +5,6 @@ function inRange(x, min, max) {
 class Picker {
 	constructor(renderer, physics) {
 		this.enabled = false;
-		this.enableFloorDragging = true;
 		this.justFinished = false;
 
 		this._mouse = { x: 0, y: 0, down: false, held: false, up: false, moved: false };
@@ -77,11 +76,6 @@ class Picker {
 
 		            this.draggingPlane = new THREE.Plane();
 
-		            if (this.networking.isHost) {
-			            this.physics.dynamicsWorld.removeConstraint(this.draggingHandle);
-			            Ammo.destroy(this.draggingHandle);
-			        }
-
 		            let controls = this.renderer.getOrbitControls();
 		            controls.enableRotate = true;
 		        }
@@ -114,31 +108,12 @@ class Picker {
 		                    controls.enableRotate = false;
 
 		                    let pos = this.selected.worldToLocal(p);
-		                    this.draggingHandle = new Ammo.btPoint2PointConstraint(body, new Ammo.btVector3(pos.x, pos.y, pos.z));
+		                    let i = this.physics.objects.indexOf(body);
 
-		                    let i = 0;
-
-			                let objs = this.physics.objects;
-			                for (let c = 0; c < objs.length; c++) {
-			                	if (body == objs[c]) {
-			                		i = c;
-			                		break;
-			                	}
-			                }
-
-			                console.log("CREATING");
+			                //console.log("CREATING");
 
 		                	let event = {frame: this.networking.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
-		                	if (this.networking) {
-		                		this.networking.addUpdate(event);
-		                	}
-
-		                	if (this.networking.isHost) {
-		                    	this.physics.dynamicsWorld.addConstraint(this.draggingHandle);
-		                    }
-		                    let setting = this.draggingHandle.get_m_setting();
-		                    //setting.set_m_impulseClamp(120);
-		                    //setting.set_m_tau(0.001);
+		                	this.networking.addUpdate(event);
 		                }
 		            }
 		        }
@@ -175,13 +150,7 @@ class Picker {
 		                    return;*/
 		                } else {
 		                	let event = {frame: this.networking.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
-		                	if (this.networking) {
-		                		this.networking.addUpdate(event);
-		                	}
-
-		                	if (this.networking.isHost) {
-		                    	this.draggingHandle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
-		                    }
+		                	this.networking.addUpdate(event);
 		                }
 		            }
 		        }
