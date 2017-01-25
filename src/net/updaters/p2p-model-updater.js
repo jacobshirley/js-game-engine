@@ -30,14 +30,14 @@ class P2PModelUpdater extends UpdateProcessor{
 	}
 
 	process(update) {
+		console.log(update.name+": "+update.frame+", "+this.networking.tick);
 		if (update.name == "APPLY") {
 			if (!this.networking.isHost) {
 				//console.log("got apply");
 	        	let applied = update.updateMeta;
 	            this.processingClients = this.processingClients.concat(applied);
-
-	            return Networking.CONTINUE_DELETE;
 	        }
+	        return Networking.CONTINUE_DELETE;
 		} else if (update.name == "STOP_APPLYING") {
 			if (!this.networking.isHost) {
 	            let toBeFinished = update.updateMeta;
@@ -46,6 +46,7 @@ class P2PModelUpdater extends UpdateProcessor{
 	            });
 	            return Networking.CONTINUE_DELETE;
 	        }
+	        return Networking.CONTINUE_DELETE;
         } else {
         	this.didProcess = true;
 
@@ -79,7 +80,7 @@ class P2PModelUpdater extends UpdateProcessor{
 		        networking.addUpdate({name: "STOP_APPLYING", frame: networking.tick, updateMeta: this.stoppedUpdates});
 		} else {
 			for (let client of this.processingClients) {
-				networking.processUpdates(client, [this.subupdater]);
+				networking.process(client, [this.subupdater]);
 			}
 		}
 

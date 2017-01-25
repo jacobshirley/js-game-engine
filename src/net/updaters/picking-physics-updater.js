@@ -12,20 +12,24 @@ class PickingPhysicsUpdater extends UpdateProcessor {
 
     startProcess(clientId) {
         this.clientId = clientId;
-
     }
 
     process(update) {
         if (update.name == "CREATE") {
+            
             let body = this.physics.objects[update.index];
             let pos = update.data;
 
-            let handle = this.handles[this.clientId] = this.physics.createJoint({type:"point2point", 
+            this.handles[this.clientId] = this.physics.createJoint({type:"point2point", 
                                                    body1: body, 
                                                    position: pos});
 
-            this.physics.addObject(handle);
+            console.log(update.name+": "+update.frame+", "+this.networking.tick);
+
+            this.physics.addObject(this.handles[this.clientId]);
         } else if (update.name == "MOVE") {
+            console.log(update.name+": "+update.frame+", "+this.networking.tick);
+           // console.log("2: "+update.frame);
             let intersection = update.data;
             this.handles[this.clientId].setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
         } else if (update.name == "DESTROY") {

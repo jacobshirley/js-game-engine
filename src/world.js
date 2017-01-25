@@ -55,7 +55,7 @@ class World extends Timer {
     }
 
     getDebugString() {
-        return "Tick: "+this.networking.tick+", Time (ms): "+this.networking.time+", FPS: "+this.fps+", UPS: "+this.ups;
+        return "Tick: "+this.networking.tick+"<br /> Time (ms): "+this.networking.time+"<br /> FPS: "+this.fps+"<br /> UPS: "+this.ups+" <br />Net updates: "+this.networking.processedUpdates;
     }
 
     update() {
@@ -65,6 +65,7 @@ class World extends Timer {
             while (this.updateTime >= this.updateInterval && t < 7) { // < 7 so it can catch up and doesn't go crazy
                 if (this.networking.update()) {
                     this.picker.update();
+                    this.networking.processAll();
                     this.physics.update(dt);
                     t++;
                 }

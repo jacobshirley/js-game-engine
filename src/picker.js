@@ -114,6 +114,8 @@ class Picker {
 
 		                	let event = {frame: this.networking.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
 		                	this.networking.addUpdate(event);
+
+
 		                }
 		            }
 		        }
@@ -151,6 +153,8 @@ class Picker {
 		                } else {
 		                	let event = {frame: this.networking.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
 		                	this.networking.addUpdate(event);
+
+		                	//console.log("1: "+event.frame);
 		                }
 		            }
 		        }

@@ -90,7 +90,7 @@ function main() {
     createAll();
 
     function setDebugText(text) {
-        $("#debug").text(text);
+        $("#debug").html(text);
     }
     
     var DELAY = 200;
@@ -100,7 +100,7 @@ function main() {
     let sendInterval = new Interval(INPUT_DELAY, true);
     sendInterval.on('complete', () => {
         if (networking.isHost) {
-            networking.addUpdate({name: "SERVER_TICK", time: networking.time, tick: networking.tick});
+            //networking.addUpdate({name: "SERVER_TICK", time: networking.time, tick: networking.tick});
         }
         networking.sendUpdates();
     });
@@ -108,7 +108,7 @@ function main() {
     let resetInterval = new Interval(RESET_DELAY, false);
     resetInterval.on('complete', () => {
         if (networking.isHost) {
-            networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
+            //networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
         }
     });
 

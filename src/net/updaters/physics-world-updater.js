@@ -54,14 +54,15 @@ class PhysicsWorldUpdater extends UpdateProcessor {
                 let delay = new IncDelay(this.netDelay, false);
                 delay.on('complete', () => {
                     console.log("COMPLETE");
-                    this.networking.setTick(this.initUpdate.startFrame);
+
+                    this.networking.setTick(this.initUpdate.startFrame-1);
                     this.networking.time = this.initUpdate.time;
                     this.reset(this.initUpdate.props);
 
                     this.initialised = true;
      
                     this.networking.addUpdateProcessor(serverControlUpdater);
-                    this.networking.addUpdateProcessor(new FrameLockUpdater(this.networking, 5, 10));
+                    //this.networking.addUpdateProcessor(new FrameLockUpdater(this.networking, 5, 10));
                 });
 
                 this.networking.addDelay(delay);

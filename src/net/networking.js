@@ -1,4 +1,4 @@
-let SERVER_INDEX = 0;
+let SERVER_ID = 0;
 
 class UpdateProcessor {
 	constructor(networking) {
@@ -137,7 +137,7 @@ class LocalConnection extends Connection {
 		this.packetLossChance = packetLossChance;
 
 		this.data = [];
-		this.data.push({from: SERVER_INDEX, data: {name: "CONNECTED", isHost: true, clients: [1], id: 1}});
+		this.data.push({from: SERVER_ID, data: {name: "CONNECTED", isHost: true, clients: [1], id: 1}});
 
 		setInterval(() => {
 			if (Math.random() > this.packetLossChance) {
@@ -159,72 +159,72 @@ class ConnectionHandler {
 		this.id = -1;
 
 		this.maxConnections = maxConnections;
-		this.serverData = [];
-		this.internalData = [];
-		this.serverDataIndices = [];
+		this.clientData = [];
+		this.internalClientData = [];
+		this.clientDataIndices = [SERVER_ID];
 
 		this.localUpdates = [];
 
 		this.connection.on('message', (data) => {
 			for (let i = 0; i < data.length; i++) {
 				let updateData = data[i];
-				let internalData = this.internalData[updateData.from];
+				let internalClientData = this.internalClientData[updateData.from];
 
-				internalData.updateData = internalData.updateData.concat(updateData.data);
+				internalClientData.updateData = internalClientData.updateData.concat(updateData.data);
 			}
 		});
 	}
 
 	init() {
-		this.serverData = [];
-		this.internalData = [];
-		this.serverDataIndices = [SERVER_INDEX];
+		this.clientData = [];
+		this.internalClientData = [];
+		this.clientDataIndices = [SERVER_ID];
 
 		for (let i = -1; i < this.maxConnections; i++) {
-			this.serverData.push(new ClientData(-1));
-			this.internalData.push(new ClientData(-1));
+			this.clientData.push(new ClientData(-1));
+			this.internalClientData.push(new ClientData(-1));
 		}
 	}
 
 	clientExists(id) {
-		return this.serverData[id].id != -1;
+		return id == SERVER_ID || this.clientData[id].id != -1;
 	}
 
-	getClient(id) {
-		return this.serverData[id];
+	getClientData(id) {
+		return this.clientData[id];
 	}
 
 	addClient(id) {
 		if (!this.clientExists(id)) {
-			this.serverData[id].id = id;
-			this.internalData[id].id = id;
+			this.clientData[id].id = id;
+			this.internalClientData[id].id = id;
 
-			this.serverDataIndices.push(id);
+			this.clientDataIndices.push(id);
 		}
 	}
 
 	removeClient(id) {
-		this.serverData[id] = new ClientData(-1);
-		this.internalData[id] = new ClientData(-1);
+		this.clientData[id] = new ClientData(-1);
+		this.internalClientData[id] = new ClientData(-1);
 
-		this.serverDataIndices.splice(this.serverDataIndices.indexOf(id), 1);
+		this.clientDataIndices.splice(this.clientDataIndices.indexOf(id), 1);
 	}
 
 	recv() {
-		let serverDataIndices = this.serverDataIndices;
-		let serverData = this.serverData;
-		let internalData = this.internalData;
+		let clientDataIndices = this.clientDataIndices;
+		let clientData = this.clientData;
+		let internalClientData = this.internalClientData;
 		
-		for (let i = 0; i < serverDataIndices.length; i++) {
-			let index = serverDataIndices[i];
+		for (let i = 0; i < clientDataIndices.length; i++) {
+			let index = clientDataIndices[i];
 
-			let toBeRemovedFrom = internalData[index];
-			let toBeAddedTo = serverData[index];
+			let toBeRemovedFrom = internalClientData[index];
+			let toBeAddedTo = clientData[index];
 
 			toBeAddedTo.updateData = toBeAddedTo.updateData.concat(toBeRemovedFrom.updateData.splice(0));
 		}
 
-		return serverData;
+		return clientData;
 	}
 
 	queue(update) {
@@ -243,6 +243,8 @@ class ConnectionHandler {
 class JSONUpdateIterator {
 	constructor(updateData, copy) {
 		this.updateData = updateData;
+		if (copy)
+			this.updateData = [].concat(updateData);
 	}
 
 	hasNext() {
@@ -268,10 +270,11 @@ class UpdateProcessorStream {
 	constructor(updateIterator, updaters) {
 		this.updateIterator = updateIterator;
 		this.updaters = updaters;
+		this.processed = 0;
 	}
 
 	iterate() {
-		var last = null;
+		let last = null;
 	    while (true) {
 	        let update = this.updateIterator.next();
 
@@ -300,8 +303,12 @@ class UpdateProcessorStream {
 	        	}
 	        }
 
-	        if (state == Networking.BREAK_DELETE || state == Networking.CONTINUE_DELETE)
+	        console.log(state);
+
+	        if (state == Networking.BREAK_DELETE || state == Networking.CONTINUE_DELETE) {
 	        	this.updateIterator.shift();
+	        	this.processed++;
+	        }
 
 	        if (state == Networking.BREAK_DELETE || state == Networking.BREAK_NOTHING)
 	        	break;
@@ -314,7 +321,7 @@ class UpdateProcessorStream {
 	}
 }
 
-class Networking extends Timer{
+class Networking extends Timer {
 
 	static get BREAK_DELETE() {
       return 0;
@@ -341,6 +348,8 @@ class Networking extends Timer{
 
 		this.updateProcessors = [];
 
+		this.processedUpdates = 0;
+
 		this.init();
 	}
 
@@ -356,8 +365,8 @@ class Networking extends Timer{
 		}
 
 		if (this.id != -1) {
-			let serverData = this.connectionHandler.serverData[this.id];
-			serverData.updateData.push(update);
+			let clientData = this.connectionHandler.getClientData(this.id);
+			clientData.updateData.push(update);
 		}
 
 		this.connectionHandler.queue(update);
@@ -385,15 +394,17 @@ class Networking extends Timer{
 		this.connectionHandler.flush();
 	}
 
-	processUpdates(id, updaters) {
-        let updateCache = this.connectionHandler.serverData[id].updateData;
+	process(id, updaters) {
+        let updateCache = this.connectionHandler.getClientData(id).updateData;
 
         for (let processor of updaters) {
 	    	processor.startProcess(id);
 	    }
 
         if (updateCache.length > 0) {
-        	new UpdateProcessorStream(new JSONUpdateIterator(updateCache, false), updaters).iterate();
+        	let ups = new UpdateProcessorStream(new JSONUpdateIterator(updateCache, false), updaters);
+        	ups.iterate();
+        	this.processedUpdates += ups.processed;
         }
 
         for (let processor of updaters) {
@@ -401,25 +412,31 @@ class Networking extends Timer{
 	    }
 	}
 
+	processLocalUpdates() {
+		this.process(this.id, this.updateProcessors);
+	}
+
+	processAll() {
+		let clientDataIndices = this.connectionHandler.clientDataIndices;
+
+	    for (let processor of this.updateProcessors) {
+	    	processor.preprocess();
+	    }
+
+	    for (let i = 0; i < clientDataIndices.length; i++) {
+	    	let id = clientDataIndices[i];
+
+	        this.process(id, this.updateProcessors);
+	    }
+
+	    for (let processor of this.updateProcessors) {
+	    	processor.postprocess();
+	    }
+	}
+
 	update() {
 		return super.update(() => {
 			this.connectionHandler.recv();
-
-			let serverDataIndices = this.connectionHandler.serverDataIndices;
-
-		    for (let processor of this.updateProcessors) {
-		    	processor.preprocess();
-		    }
-
-		    for (let i = 0; i < serverDataIndices.length; i++) {
-		    	let id = serverDataIndices[i];
-
-		        this.processUpdates(id, this.updateProcessors);
-		    }
-
-		    for (let processor of this.updateProcessors) {
-		    	processor.postprocess();
-		    }
 
 			return true;
 		});

@@ -33,6 +33,7 @@ class FrameLockUpdater extends UpdateProcessor {
                 return Networking.CONTINUE_DELETE;
             }
 
+            console.log("DO DO DO");
             return Networking.BREAK_NOTHING;
         }
 

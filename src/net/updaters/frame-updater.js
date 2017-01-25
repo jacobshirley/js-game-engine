@@ -1,5 +1,5 @@
 class FrameUpdater extends UpdateProcessor {
-    constructor(networking, subupdaters, allowPastUpdates) {
+    constructor(networking, subupdaters, disablePastUpdates) {
         super(networking);
 
         this.clientId = -1;
@@ -7,7 +7,7 @@ class FrameUpdater extends UpdateProcessor {
 
         this.subupdaters = subupdaters;
 
-        this.allowPastUpdates = allowPastUpdates;
+        this.disablePastUpdates = disablePastUpdates;
     }
 
     preprocess() {
@@ -24,7 +24,6 @@ class FrameUpdater extends UpdateProcessor {
     }
 
     process(update) {
-        //console.log(update);
         if (!update.frame)
             return Networking.SKIP;
         
@@ -33,25 +32,31 @@ class FrameUpdater extends UpdateProcessor {
                 this.lastFrame = update.frame;
             }
 
+            //console.log("doing "+this.networking.tick);
             if (this.lastFrame == update.frame) {
                 for (let subupdater of this.subupdaters)
                     subupdater.process(update);
                 return Networking.CONTINUE_DELETE;
             } else {
+                console.log(update);
                 return Networking.BREAK_NOTHING;
             }
         }
 
-        let cont = this.networking.isHost || !this.allowPastUpdates || this.networking.tick == update.frame;
+        //!this.disablePastUpdates || 
+        let cont = this.networking.isHost || this.networking.tick == update.frame;
         if (cont) {
-            let check = this.clientId != this.networking.id || this.networking.isHost;
-            if (this.allowPastUpdates && check) {
+            let check = true;//this.clientId != this.networking.id;// || this.networking.isHost;
+            /*if (this.disablePastUpdates) {
                 return upd();
-            } else if (!this.allowPastUpdates) {
+            } else if (!this.disablePastUpdates) {
+                //console.log("SDFSDF");
                 return upd();
-            }
-            return Networking.BREAK_DELETE;
+            }*/
+            return upd();
+            //return Networking.BREAK_DELETE;
         } else {
+            //console.log("NOTHING");
             return Networking.BREAK_NOTHING;
         }
     }
