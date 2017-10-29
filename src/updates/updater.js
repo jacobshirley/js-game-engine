@@ -8,16 +8,8 @@ class UpdateStream {
 		this.updates.push(update);
 	}
 
-	hasNext() {
-		return this.updates.length > 0;
-	}
-
-	next() {
-		return this.updates[0];
-	}
-
-	remove() {
-		return this.updates.shift();
+	iterator() {
+		return new BasicIterator(this.updates);
 	}
 }
 
@@ -240,11 +232,11 @@ class NetworkedUpdateQueue extends UpdatePool {
 	update() {
 		this.recv();
 
-		let serverUpdates = this.getClient(SERVER_ID).updates;
-		let jsonUpdater = new JSONUpdateIterator(serverUpdates);
+		let cl = this.getClient(SERVER_ID);
+		let jsonUpdater = cl.iterator();
 
 		while (jsonUpdater.hasNext()) {
-			let u = jsonUpdater.shift();
+			let u = jsonUpdater.remove();
 			this.process(u);
 			for (let processor of this.processors) {
 		    	processor.startProcess(u.clientId);
@@ -290,13 +282,13 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 		//process host first
 		for (let stream of this.streams) {
 			if (stream.isHost) {
-				let it = new JSONUpdateIterator(stream.updates);
+				let it = stream.iterator();
 
 				while (it.hasNext()) {
 					let u = it.next();
 
 					if (u.frame == frame) {
-						it.shift();
+						it.remove();
 
 						if (u.name == "APPLY") {
 							let data = u.updateMeta;
@@ -308,10 +300,10 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 							updates.push(u);
 						}
 					} else if (u.frame < frame) {
-						it.shift();
+						it.remove();
 					} else if (!u.frame) {
 						updates.push(u);
-						it.shift();
+						it.remove();
 					}
 				}
 
@@ -322,12 +314,12 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 		//every other stream
 		for (let stream of this.streams) {
 			if (stream.id != SERVER_ID && !stream.isHost) {
-				let it = new JSONUpdateIterator(stream.updates);
+				let it = stream.iterator();
 				let i = 0;
 				if (this.isHost) {
 					let updated = it.hasNext();
 					while (it.hasNext()) {
-						let u = it.shift();
+						let u = it.remove();
 						updates.push(u);
 						i++;
 					}
@@ -338,10 +330,14 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 				} else {
 					let index = this.streamIds.indexOf(stream.id);
 					while (this.readingClients[index] > 0 && it.hasNext()) {
-						let u = it.shift();
+						let u = it.remove();
 						updates.push(u);
 
 						this.readingClients[index]--;
+					}
+
+					if (this.readingClients[index] > 0) {
+						console.log("ERROR");
 					}
 				}
 			}
@@ -378,7 +374,7 @@ class WorldUpdater extends DelegateUpdater {
 			let timer = this.world.updateTimer;
 
 			if (!this.pool.isHost) {
-				let delay = new IncDelay(100, false);
+				let delay = new IncDelay(50, false);
 				delay.on('complete', () => {
 					timer.setTick(update.startFrame - 1);
 					timer.time = update.time;
@@ -400,9 +396,9 @@ class WorldUpdater extends DelegateUpdater {
 				this.pool.push({name: "INIT", startFrame: timer.tick, time: timer.time, props: p});
 			}
 		} else if (update.name == "SERVER_TICK") {
-			if (!this.pool.isHost && update.time - this.world.updateTimer < 300) {
+			if (!this.pool.isHost && update.time - this.world.updateTimer.time < 20) {
 				console.log("WAIT");
-				timer.addDelay(new IncDelay(500, false));
+				this.world.updateTimer.addDelay(new IncDelay(30, false));
 			}
 		}
 
@@ -410,7 +406,7 @@ class WorldUpdater extends DelegateUpdater {
 	}
 }
 
-class JSONUpdateIterator {
+class BasicIterator {
 	constructor(updateData, copy) {
 		this.updateData = updateData;
 		this.index = 0;
@@ -426,7 +422,7 @@ class JSONUpdateIterator {
 		return this.updateData[this.index++];
 	}
 
-	shift() {
+	remove() {
 		this.index--;
 		if (this.index <= 0) {
 			this.index = 0;
@@ -436,55 +432,65 @@ class JSONUpdateIterator {
 	}
 }
 
-class UpdateProcessorStream {
-	constructor(updateIterator, processors) {
-		this.updateIterator = updateIterator;
-		this.processors = processors;
-		this.processed = 0;
+class JSONUpdateIterator {
+	constructor(updateData, copy) {
+		this.updateData = updateData;
+		this.index = -1;
+		this.blanks = 0;
+		if (copy)
+			this.updateData = [].concat(updateData);
+
+		let i = 0;
+		while (i < this.updateData.length && this.updateData[i++] == null) {
+			this.blanks++;
+		}
 	}
 
-	iterate() {
-		let last = null;
-	    while (true) {
-	        let update = this.updateIterator.next();
+	cleanup() {
+		let i = -1;
+		while (++i < this.updateData.length && this.updateData[i] == null) {
+			if (i == 0) {
+				console.log("DDD");
+				this.updateData.shift();
+				this.blanks--;
 
-	        if (last != null) { //debug code
-	        	if (last == update) {
-	        		//console.log("Problem with "+update.name+", "+this.processors[1].process(update));
-	        		//break;
-	        	}
-	        }
+				i--;
+			}
+		}
+	}
 
-	        let state = -1;
-	        for (let processor of this.processors) {
-	        	let state2 = processor.process(update);
+	hasNext() {
+		//this.cleanup();
 
-	        	if (state == -1) {
-	        		if (!state2)
-	        			console.log("WARNING: "+(typeof processor)+" returns no value. Defaulting to Networking.SKIP for this update...");
+		return this.index < this.updateData.length - this.blanks - 1;
+	}
 
-	        		state = state2 || Networking.SKIP;
-	        	} else if (state == Networking.SKIP && state2 != state) {
-	        		state = state2;
-	        	} else if (state == Networking.CONTINUE_DELETE && (state2 == Networking.BREAK_DELETE || state2 == Networking.BREAK_NOTHING)) {
-	        		throw "Processor conflict with update "+update.name+": CONTINUE_DELETE and BREAK_* are incompatible. Please check your processors.";
-	        	} else if (state == Networking.BREAK_NOTHING && state2 == Networking.BREAK_DELETE) {
-	        		state = state2;
-	        	}
-	        }
+	next() {
+		while (++this.index < this.updateData.length && this.updateData[this.index] == null) {
 
-	        if (state == Networking.BREAK_DELETE || state == Networking.CONTINUE_DELETE) {
-	        	this.updateIterator.shift();
-	        	this.processed++;
-	        }
+		}
 
-	        if (state == Networking.BREAK_DELETE || state == Networking.BREAK_NOTHING)
-	        	break;
+		//console.log(this.updateData[this.index]);
 
-	        last = update;
+		return this.updateData[this.index];
+	}
 
-	        if (!this.updateIterator.hasNext())
-	            break;
-	    }
+	remove() {
+		//this.cleanup();
+
+		if (this.index <= 0) {
+			let r = this.updateData.shift();
+			if (this.index == 0)
+				this.index--;
+
+			return r;
+		} else {
+			let ret = this.updateData[this.index];
+			console.log("LOL");
+			this.updateData[this.index--] = null;
+			this.blanks++;
+
+			return ret;
+		}
 	}
 }
