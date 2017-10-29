@@ -4,7 +4,7 @@ function toRadians(degrees) {
 
 function main() {
     var renderer, physics, world;
-    var connection = new WebSocketConnection("ws://192.168.1.77:8080/");
+    var connection = new WebSocketConnection("ws://127.0.0.1:8080/");
     //var p2pNetworking = new Networking(connection, 64);
 
     renderer = new Renderer();

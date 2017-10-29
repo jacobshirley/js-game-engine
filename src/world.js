@@ -88,13 +88,17 @@ class World extends Timer {
                     //    this.networking.update();
 
                     this.picker.update();
-                    this.updatePool.update(this.updateTimer.tick);
-                    this.physics.update(dt);
+                    try {
+                        this.updatePool.update(this.updateTimer.tick);
+                        this.physics.update(dt);
 
-                    t++;
+                        t++;
 
-                    this.updateTime -= this.updateInterval;
-                    this.tempUPS++;
+                        this.updateTime -= this.updateInterval;
+                        this.tempUPS++;
+                    } catch (e) {
+                        this.updateTimer.addDelay(new IncDelay(5, true));
+                    }
 
                     return true;
                 })) {

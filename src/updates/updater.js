@@ -1,3 +1,5 @@
+const LATENCY = 5;
+
 class UpdateStream {
 	constructor(id) {
 		this.id = id;
@@ -247,20 +249,11 @@ class NetworkedUpdateQueue extends UpdatePool {
 	}
 }
 
-class LockstepUpdater extends UpdateProcessor {
-	constructor(pool) {
-		super(pool);
-	}
-
-	process(update) {
-		console.log(update.frame);
-	}
-}
-
 class LockstepUpdateQueue extends NetworkedUpdateQueue {
 	constructor(connection) {
 		super(connection);
 
+		this.queuedUpdates = [];
 		this.readingClients = [];
 	}
 
@@ -276,7 +269,6 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 		if (!this.connected)
 			return;
 
-		let updates = [];
 		let applied = [];
 
 		//process host first
@@ -287,7 +279,14 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 				while (it.hasNext()) {
 					let u = it.next();
 
-					if (u.frame == frame) {
+					if (u.name == "SERVER_TICK") {
+						it.remove();
+
+						let diff = u.tick - frame;
+						if (!this.isHost && diff < LATENCY) {
+							throw new LockstepQueueError(diff);
+						}
+					} else if (u.frame == frame) {
 						it.remove();
 
 						if (u.name == "APPLY") {
@@ -297,12 +296,12 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 								this.readingClients[index] = d.count;
 							}
 						} else {
-							updates.push(u);
+							this.queuedUpdates.push(u);
 						}
 					} else if (u.frame < frame) {
 						it.remove();
 					} else if (!u.frame) {
-						updates.push(u);
+						this.queuedUpdates.push(u);
 						it.remove();
 					}
 				}
@@ -320,7 +319,7 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 					let updated = it.hasNext();
 					while (it.hasNext()) {
 						let u = it.remove();
-						updates.push(u);
+						this.queuedUpdates.push(u);
 						i++;
 					}
 
@@ -331,13 +330,13 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 					let index = this.streamIds.indexOf(stream.id);
 					while (this.readingClients[index] > 0 && it.hasNext()) {
 						let u = it.remove();
-						updates.push(u);
+						this.queuedUpdates.push(u);
 
 						this.readingClients[index]--;
 					}
 
 					if (this.readingClients[index] > 0) {
-						console.log("ERROR");
+						throw new LockstepQueueError(-1);
 					}
 				}
 			}
@@ -347,7 +346,10 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 			this.push({name: "APPLY", frame, updateMeta: applied});
 		}
 
-		for (let u of updates) {
+		let it = new JSONUpdateIterator(this.queuedUpdates);
+		while (it.hasNext()) {
+			let u = it.remove();
+			
 			for (let processor of this.processors) {
 		    	processor.startProcess(u.clientId);
 		    	processor.process(u);
@@ -374,7 +376,7 @@ class WorldUpdater extends DelegateUpdater {
 			let timer = this.world.updateTimer;
 
 			if (!this.pool.isHost) {
-				let delay = new IncDelay(50, false);
+				let delay = new IncDelay(LATENCY, true);
 				delay.on('complete', () => {
 					timer.setTick(update.startFrame - 1);
 					timer.time = update.time;
@@ -395,12 +397,12 @@ class WorldUpdater extends DelegateUpdater {
 				this.world.reset(p);
 				this.pool.push({name: "INIT", startFrame: timer.tick, time: timer.time, props: p});
 			}
-		} else if (update.name == "SERVER_TICK") {
-			if (!this.pool.isHost && update.time - this.world.updateTimer.time < 20) {
-				console.log("WAIT");
-				this.world.updateTimer.addDelay(new IncDelay(30, false));
+		}/* else if (update.name == "SERVER_TICK") {
+			let diff = update.time - this.world.updateTimer.time;
+			if (!this.pool.isHost && diff < LATENCY) {
+				throw new LockstepQueueError(diff);
 			}
-		}
+		}*/
 
 		return super.process(update);
 	}
