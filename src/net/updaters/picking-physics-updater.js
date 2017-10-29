@@ -1,9 +1,11 @@
 class PickingPhysicsUpdater extends UpdateProcessor {
-    constructor(networking, physics) {
-        super(networking);
+    constructor(pool, physics, timer) {
+        super(pool);
 
         this.clientId = -1;
         this.physics = physics;
+        this.timer = timer;
+        
         this.handles = [];
 
         for (let i = 0; i < 100; i++)
@@ -16,7 +18,6 @@ class PickingPhysicsUpdater extends UpdateProcessor {
 
     process(update) {
         if (update.name == "CREATE") {
-            
             let body = this.physics.objects[update.index];
             let pos = update.data;
 
@@ -24,11 +25,12 @@ class PickingPhysicsUpdater extends UpdateProcessor {
                                                    body1: body, 
                                                    position: pos});
 
-            console.log(update.name+": "+update.frame+", "+this.networking.tick);
+            console.log(update.name);
+            //console.log(update.name+": "+update.frame+", "+this.timer.tick);
 
             this.physics.addObject(this.handles[this.clientId]);
         } else if (update.name == "MOVE") {
-            console.log(update.name+": "+update.frame+", "+this.networking.tick);
+            //console.log(update.name+": "+update.frame+", "+this.timer.tick);
            // console.log("2: "+update.frame);
             let intersection = update.data;
             this.handles[this.clientId].setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));

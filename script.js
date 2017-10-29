@@ -4,52 +4,59 @@ function toRadians(degrees) {
 
 function main() {
     var renderer, physics, world;
-    var client = new WebSocketConnection("ws://127.0.0.1:8080/");
-    var networking = new Networking(client, 64);
+    var connection = new WebSocketConnection("ws://127.0.0.1:8080/");
+    //var p2pNetworking = new Networking(connection, 64);
 
-    function init() {
-        renderer = new Renderer();
-        physics = new Physics();
+    renderer = new Renderer();
+    physics = new Physics();
 
-        world = new World(renderer, physics, networking);
-        world.init();
-        world.picker.enabled = true;
-        world.picker.setNetworking(networking);
+    var updatePool = new LockstepUpdateQueue(connection);
 
-        //create the lighting
-        
-        var light = new THREE.DirectionalLight(0xdfebff, 1.75);
-        light.position.set(10, 30, 10);
-        light.position.multiplyScalar(1.3);
+    let physicsUpdater = new PickingPhysicsUpdater(updatePool, physics);
+    //var serverHandler = new ServerConnection(connection, updatePool, physicsUpdater);
 
-        //light.castShadow = true;
 
-        light.shadow.mapSize.width = 512;
-        light.shadow.mapSize.height = 512;
+    var myClient = updatePool.myClient;
+    //updatePool.addStream(myClient);
 
-        var d = 15;
+    world = new World(renderer, physics, updatePool);
+    world.init();
+    world.picker.enabled = true;
+    world.picker.setLocalUpdateStream(myClient);
 
-        light.shadow.camera.left = -d;
-        light.shadow.camera.right = d;
-        light.shadow.camera.top = d;
-        light.shadow.camera.bottom = -d;
+    updatePool.addProcessor(new WorldUpdater(updatePool, physicsUpdater, world));
 
-        light.shadow.camera.far = 100;
+    //create the lighting
 
-        renderer.createOrbitControls();
-        renderer.addObject(light);
-        renderer.addObject(new THREE.AmbientLight(0x404040));
-    }
+    var light = new THREE.DirectionalLight(0xdfebff, 1.75);
+    light.position.set(10, 30, 10);
+    light.position.multiplyScalar(1.3);
 
-    init();
+    //light.castShadow = true;
+
+    light.shadow.mapSize.width = 512;
+    light.shadow.mapSize.height = 512;
+
+    var d = 15;
+
+    light.shadow.camera.left = -d;
+    light.shadow.camera.right = d;
+    light.shadow.camera.top = d;
+    light.shadow.camera.bottom = -d;
+
+    light.shadow.camera.far = 100;
+
+    renderer.createOrbitControls();
+    renderer.addObject(light);
+    renderer.addObject(new THREE.AmbientLight(0x404040));
 
     //server.addObject(new Block(props));
 
     //code for jenga
     function createAll() {
         var props2 = {size: {width: 10, height: 1, length: 10},
-                      position: {x: 0, y: -1, z: 0}, 
-                      color: 0x00FFFF, 
+                      position: {x: 0, y: -1, z: 0},
+                      color: 0x00FFFF,
                       mass:0};
 
         var floor = new Block(props2);
@@ -92,33 +99,32 @@ function main() {
     function setDebugText(text) {
         $("#debug").html(text);
     }
-    
+
     var DELAY = 200;
     var INPUT_DELAY = 5; // in ticks
     var RESET_DELAY = 5000; // in ms
 
     let sendInterval = new Interval(INPUT_DELAY, true);
     sendInterval.on('complete', () => {
-        if (networking.isHost) {
-            //networking.addUpdate({name: "SERVER_TICK", time: networking.time, tick: networking.tick});
+        if (updatePool.isHost) {
+            updatePool.push({name: "SERVER_TICK", time: world.updateTimer.time, tick: world.updateTimer.tick});
         }
-        networking.sendUpdates();
+        updatePool.flush();
     });
 
     let resetInterval = new Interval(RESET_DELAY, false);
     resetInterval.on('complete', () => {
-        if (networking.isHost) {
-            //networking.addUpdate({name: "RESET_ALL", frame: networking.tick, props: physics.getAllObjectProps()});
-        }
+        //if (p2pNetworking.isHost) {
+            //p2pNetworking.addUpdate({name: "RESET_ALL", frame: p2pNetworking.tick, props: physics.getAllObjectProps()});
+        //}
     });
 
-    networking.addInterval(sendInterval);
-    networking.addInterval(resetInterval);
+    world.addInterval(sendInterval);
+    world.addInterval(resetInterval);
 
-    networking.addUpdateProcessor(new PhysicsWorldUpdater(networking, world, DELAY));
-
-    world.setMaxFrames(60);
-    world.setUpdateRate(60);
+    //updatePool.addProcessor(new LockstepUpdater(updatePool));//new PhysicsWorldUpdater(updatePool, myClient, world, DELAY));
+    //world.setMaxFrames(60);
+    //world.setUpdateRate(30);
 
     function animate() {
         world.update();

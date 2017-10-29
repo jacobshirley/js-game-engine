@@ -3,7 +3,7 @@ function inRange(x, min, max) {
 }
 
 class Picker {
-	constructor(renderer, physics) {
+	constructor(renderer, physics, timer) {
 		this.enabled = false;
 		this.justFinished = false;
 
@@ -35,7 +35,8 @@ class Picker {
 
 	    this.renderer = renderer;
 	    this.physics = physics;
-
+	    this.timer = timer;
+	    
 	    this.selected = null;
 
 	    this.draggingPlane = new THREE.Plane();
@@ -43,13 +44,13 @@ class Picker {
 
 	    this.floor = null;
 
-	    this.networking = null;
+	    this.localStream = null;
 
 	    this.updatesRecord = [];
 	}
 
-	setNetworking(networking) {
-		this.networking = networking;
+	setLocalUpdateStream(stream) {
+		this.localStream = stream;
 	}
 
 	setFloor(floor) {
@@ -69,9 +70,9 @@ class Picker {
 		            this.justFinished = true;
 		            this.selected = null;
 
-		            if (this.networking) {
-		        		let event = {frame: this.networking.tick, name: "DESTROY"};
-		            	this.networking.addUpdate(event);
+		            if (this.localStream) {
+		        		let event = {frame: this.timer.tick, name: "DESTROY"};
+		            	this.localStream.push(event);
 		            }
 
 		            this.draggingPlane = new THREE.Plane();
@@ -110,12 +111,10 @@ class Picker {
 		                    let pos = this.selected.worldToLocal(p);
 		                    let i = this.physics.objects.indexOf(body);
 
-			                //console.log("CREATING");
+			                console.log("CREATING");
 
-		                	let event = {frame: this.networking.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
-		                	this.networking.addUpdate(event);
-
-
+		                	let event = {frame: this.timer.tick, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
+		                	this.localStream.push(event);
 		                }
 		            }
 		        }
@@ -151,8 +150,8 @@ class Picker {
 		                    console.log("in range in z "+inRange(localPos.z, -Z, Z)+", "+localPos.z);
 		                    return;*/
 		                } else {
-		                	let event = {frame: this.networking.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
-		                	this.networking.addUpdate(event);
+		                	let event = {frame: this.timer.tick, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
+		                	this.localStream.push(event);
 
 		                	//console.log("1: "+event.frame);
 		                }

@@ -30,9 +30,18 @@ wss.on('connection', function connection(ws) {
 
 	clientIndices.push(ws.id);
 	clients[ws.id].id = ws.id;
+    clients[ws.id].isHost = clientIndices.length == 1;
 	clients[ws.id].socket = ws;
 
-	updates.push({from: SERVER_INDEX, data: {name: "CONNECTED", isHost: clientIndices.length == 1, clients: clientIndices, id: ws.id}});
+    let send = [];
+    for (let cl of clients) {
+        if (cl.id > -1) {
+            //console.log(cl.isHost);
+            send.push({id: cl.id, isHost: cl.isHost});
+        }
+    }
+
+	updates.push({from: SERVER_INDEX, data: {name: "CONNECTED", isHost: clientIndices.length == 1, clients: send, id: ws.id}});
 
 	ws.on('message', function incoming(message) {
 		//console.log("got message "+message);

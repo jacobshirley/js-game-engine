@@ -1,0 +1,29 @@
+Update pools:
+-BasicPool >
+    -processes updates from each stream
+
+-NetworkedUpdateQueue (Pool) >
+    -an extension of the basic pool, with networked clients being added
+
+-LockstepUpdatePool
+    -uses a "frame" parameter to get all updates with the same frame value, from multiple streams
+    -it processes this collection of updates with the "update processors"
+    -makes sure that this game is a defined amount of time/ticks behind the host client
+    -if this is the host client, updates are processed as and when they come in
+    -when an update is processed by the host, a new update is created
+    -this update tells other clients that this client is being processed
+
+
+Update processors stack:
+-ServerHandler >
+    -handles client initialisation, data just from the central server
+    -should be uniform across games, i.e., no two games p2p games should need different server handlers
+
+-WorldInitialiser >
+    -handles initialisation of the world object
+    -sets initial positions of the game objects
+    -resets the world when a new client connects. this is so that the game is synchronised across clients.
+
+-WorldPickingHandler >
+    -creates picking handles for each connection ("stream")
+    -handles mouse movement

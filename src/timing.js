@@ -46,7 +46,7 @@ class IncDelay extends Delay{
 		let i = this.counter.tick;
 		if (!this.useTicks)
 			i = this.counter.time;
-		
+
 		let bool = i >= this.marker;
 		if (bool) {
 			this.emit('complete');
@@ -135,7 +135,7 @@ class Counter {
 	}
 }
 
-class Timer extends Counter{
+class Timer extends Counter {
 	constructor() {
 		super();
 
@@ -210,7 +210,7 @@ class Timer extends Counter{
 	}
 
 	update(main) {
-		//if (!this.paused) {
+		if (!this.paused) {
 			this.delayCounter.update();
 
 			let delayed = false;
@@ -245,7 +245,8 @@ class Timer extends Counter{
 			}
 
 			return main();
-		//}
-		//return false;
+		}
+
+		return false;
 	}
 }

@@ -3,15 +3,19 @@ let _trans = new Ammo.btTransform(); // taking this out of the loop below us red
 const DEFAULT_UPDATE_RATE = 1000/60;
 
 class World extends Timer {
-    constructor(renderer, physics, networking) {
+    constructor(renderer, physics, updatePool) {
         super();
 
         this.objects = [];
         this.renderer = renderer;
         this.physics = physics;
-        this.networking = networking;
+        //this.networking = networking;
+        this.updatePool = updatePool;
 
-        this.picker = new Picker(this.renderer, this.physics);
+        this.updateInterval = DEFAULT_UPDATE_RATE;
+        this.updateTimer = new Timer();
+
+        this.picker = new Picker(this.renderer, this.physics, this.updateTimer);
 
         this.renderTime = 0;
         this.updateTime = 0;
@@ -20,8 +24,6 @@ class World extends Timer {
 
         this.ups = 0;
         this.tempUPS = 0;
-
-        this.updateInterval = DEFAULT_UPDATE_RATE;
     }
 
     init() {
@@ -34,11 +36,29 @@ class World extends Timer {
         this.physics.destroy();
     }
 
+    reset(state) {
+        let newObjects = [];
+
+        for (let object of this.objects) {
+            newObjects.push(object.copy());
+        }
+
+        this.removeAll(true);
+        this.physics.reset();
+
+        for (let object of newObjects) {
+            this.addObject(object);
+        }
+
+        if (state)
+            this.physics.setAllObjectProps(state);
+    }
+
     addObject(object) {
         object.init(this.physics);
 
         this.objects.push(object);
-        
+
         this.renderer.addObject(object);
         this.physics.addObject(object);
     }
@@ -55,7 +75,7 @@ class World extends Timer {
     }
 
     getDebugString() {
-        return "Tick: "+this.networking.tick+"<br /> Time (ms): "+this.networking.time+"<br /> FPS: "+this.fps+"<br /> UPS: "+this.ups+" <br />Net updates: "+this.networking.processedUpdates;
+        return "Tick: "+this.updateTimer.tick+"<br /> Time (ms): "+this.updateTimer.time+"<br /> FPS: "+this.fps+"<br /> UPS: "+this.ups+" <br />Net updates: "+this.updatePool.processedUpdates;
     }
 
     update() {
@@ -63,14 +83,24 @@ class World extends Timer {
             const dt = this.updateInterval/1000.0;
             let t = 0;
             while (this.updateTime >= this.updateInterval && t < 7) { // < 7 so it can catch up and doesn't go crazy
-                if (this.networking.update()) {
+                if (!this.updateTimer.update(() => {
+                    //if (this.networking)
+                    //    this.networking.update();
+
                     this.picker.update();
-                    this.networking.processAll();
+                    this.updatePool.update(this.updateTimer.tick);
                     this.physics.update(dt);
+
                     t++;
+
+                    this.updateTime -= this.updateInterval;
+                    this.tempUPS++;
+
+                    return true;
+                })) {
+                    this.updateTime -= this.updateInterval;
+                    //console.log("DD");
                 }
-                this.updateTime -= this.updateInterval;
-                this.tempUPS++;
             }
 
             for (let obj of this.objects) {
@@ -90,7 +120,7 @@ class World extends Timer {
 
             this.renderer.render();
 
-            this.renderTime += this.deltaTime; 
+            this.renderTime += this.deltaTime;
             this.updateTime += this.deltaTime;
             this.tempFPS++;
 

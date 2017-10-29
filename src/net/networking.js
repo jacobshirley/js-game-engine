@@ -1,8 +1,8 @@
 let SERVER_ID = 0;
 
 class UpdateProcessor {
-	constructor(networking) {
-		this.networking = networking;
+	constructor(pool) {
+		this.pool = pool;
 	}
 
 	preprocess() {
@@ -18,7 +18,7 @@ class UpdateProcessor {
 	}
 
 	endProcess(clientId) {
-		
+
 	}
 
 	postprocess() {
@@ -31,39 +31,6 @@ class UpdateProcessor {
 
 	decode(update) {
 
-	}
-}
-
-class ConnectionUpdateProcessor extends UpdateProcessor {
-	constructor(networking) {
-		super(networking);
-		this.initialised = false;
-	}
-
-	process(update) {
-		let networking = this.networking;
-
-        if (update.name == "CONNECTED") {
-        	for (let client of update.clients) {
-        		networking.addClient(client);
-        	}
-        	if (!this.initialised) {
-	        	this.initialised = true;
-
-	            networking.isHost = update.isHost;
-	            networking.id = update.id;
-	            networking.connectionHandler.id = update.id;
-	        }
-
-            return Networking.CONTINUE_DELETE;
-        } else if (update.name == "DISCONNECTED") {
-        	for (let client of update.clients) {
-        		networking.removeClient(client);
-        	}
-        } else if (!this.initialised)
-			return Networking.CONTINUE_DELETE;
-
-        return Networking.SKIP;
 	}
 }
 
@@ -131,13 +98,14 @@ class LocalConnection extends Connection {
 	constructor(latency, packetLossChance) {
 		super();
 
-		this.connected = true;
-
 		this.latency = latency;
 		this.packetLossChance = packetLossChance;
 
+		this.connected = true;
+		this.emit('connected');
+
 		this.data = [];
-		this.data.push({from: SERVER_ID, data: {name: "CONNECTED", isHost: true, clients: [1], id: 1}});
+		this.data.push({from: SERVER_ID, data: {name: "CONNECTED", isHost: true, clients: [{id: 1, isHost: false}], id: 1}});
 
 		setInterval(() => {
 			if (Math.random() > this.packetLossChance) {
@@ -214,7 +182,7 @@ class ConnectionHandler {
 		let clientDataIndices = this.clientDataIndices;
 		let clientData = this.clientData;
 		let internalClientData = this.internalClientData;
-		
+
 		for (let i = 0; i < clientDataIndices.length; i++) {
 			let index = clientDataIndices[i];
 
@@ -240,84 +208,9 @@ class ConnectionHandler {
 	}
 }
 
-class JSONUpdateIterator {
-	constructor(updateData, copy) {
-		this.updateData = updateData;
-		if (copy)
-			this.updateData = [].concat(updateData);
-	}
-
-	hasNext() {
-		return this.updateData.length > 0;
-	}
-
-	next() {
-		return this.updateData[0];
-	}
-
-	shift() {
-		return this.updateData.shift();
-	}
-}
-
 class ProtobufUpdateIterator {
 	constructor(updateData) {
 		this.updateData = updateData;
-	}
-}
-
-class UpdateProcessorStream {
-	constructor(updateIterator, updaters) {
-		this.updateIterator = updateIterator;
-		this.updaters = updaters;
-		this.processed = 0;
-	}
-
-	iterate() {
-		let last = null;
-	    while (true) {
-	        let update = this.updateIterator.next();
-
-	        if (last != null) { //debug code
-	        	if (last == update) {
-	        		//console.log("Problem with "+update.name+", "+this.updaters[1].process(update));
-	        		//break;
-	        	}
-	        }
-
-	        let state = -1;
-	        for (let processor of this.updaters) {
-	        	let state2 = processor.process(update);
-
-	        	if (state == -1) {
-	        		if (!state2)
-	        			console.log("WARNING: "+(typeof processor)+" returns no value. Defaulting to Networking.SKIP for this update...");
-
-	        		state = state2 || Networking.SKIP;
-	        	} else if (state == Networking.SKIP && state2 != state) {
-	        		state = state2;
-	        	} else if (state == Networking.CONTINUE_DELETE && (state2 == Networking.BREAK_DELETE || state2 == Networking.BREAK_NOTHING)) {
-	        		throw "Processor conflict with update "+update.name+": CONTINUE_DELETE and BREAK_* are incompatible. Please check your updaters.";
-	        	} else if (state == Networking.BREAK_NOTHING && state2 == Networking.BREAK_DELETE) {
-	        		state = state2;
-	        	}
-	        }
-
-	        console.log(state);
-
-	        if (state == Networking.BREAK_DELETE || state == Networking.CONTINUE_DELETE) {
-	        	this.updateIterator.shift();
-	        	this.processed++;
-	        }
-
-	        if (state == Networking.BREAK_DELETE || state == Networking.BREAK_NOTHING)
-	        	break;
-
-	        last = update;
-
-	        if (!this.updateIterator.hasNext())
-	            break;
-	    }
 	}
 }
 
@@ -413,7 +306,7 @@ class Networking extends Timer {
 	}
 
 	processLocalUpdates() {
-		this.process(this.id, this.updateProcessors);
+		return this.process(this.id, this.updateProcessors);
 	}
 
 	processAll() {
