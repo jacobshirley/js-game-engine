@@ -1,21 +1,15 @@
 class Delay extends EventEmitter {
 	constructor() {
 		super();
-
-		this.counter = null;
 	}
 
 	delete() {
 		return true;
 	}
 
-	start() {
+	start(counter) {}
 
-	}
-
-	complete() {
-
-	}
+	complete(counter) {}
 }
 
 class IncDelay extends Delay{
@@ -28,24 +22,24 @@ class IncDelay extends Delay{
 		this.marker = 0;
 	}
 
-	start() {
-		if (!this.counter)
+	start(counter) {
+		if (!counter)
 			return;
 
-		let i = this.counter.tick;
+		let i = counter.tick;
 		if (!this.useTicks)
-			i = this.counter.time;
+			i = counter.time;
 
 		this.marker = i + this.delay;
 	}
 
-	complete() {
-		if (!this.counter)
+	complete(counter) {
+		if (!counter)
 			return false;
 
-		let i = this.counter.tick;
+		let i = counter.tick;
 		if (!this.useTicks)
-			i = this.counter.time;
+			i = counter.time;
 
 		let bool = i >= this.marker;
 		if (bool) {
@@ -69,12 +63,12 @@ class MaxFrameDelay extends Delay{
 	}
 
 	start() {
-		this.then = this.counter.time;
+		this.then = counter.time;
 	}
 
 	complete() {
-		let now = this.counter.time;
-		let delta = now-this.then;
+		let now = counter.time;
+		let delta = now - this.then;
 
 		if (delta > this.frameInterval) {
 			this.emit('complete');
@@ -92,15 +86,14 @@ class Interval extends EventEmitter {
 		this.target = target;
 		this.inc = 0;
 		this.useTicks = useTicks;
-		this.counter = null;
 	}
 
-	reset() {
+	reset(counter) {
 		this.inc = 0;
 	}
 
-	update() {
-		let i = this.counter.deltaTime;
+	update(counter) {
+		let i = counter.deltaTime;
 		if (this.useTicks)
 			i = 1;
 
@@ -162,15 +155,13 @@ class Timer extends Counter {
 	}
 
 	addDelay(delay) {
-		delay.counter = this.delayCounter;
-		delay.start();
+		delay.start(this.delayCounter);
 
 		this.delays.push(delay);
 	}
 
 	addInterval(interval) {
-		interval.counter = this;
-		interval.reset();
+		interval.reset(this);
 
 		this.intervals.push(interval);
 	}
@@ -193,15 +184,11 @@ class Timer extends Counter {
 		this.parent.removeTetherable(this);
 	}
 
-	setMaxFrames(max) {
-		this.addDelay(new MaxFrameDelay(1000.0/max));
-	}
-
 	setTick(newTick) {
 		this.tick = newTick;
 
 		for (let interval of this.intervals) {
-			interval.reset();
+			interval.reset(this);
 		}
 	}
 
@@ -211,22 +198,25 @@ class Timer extends Counter {
 
 	update(main) {
 		if (!this.paused) {
-			this.delayCounter.update();
+			this.delayCounter.update(this);
 
 			let delayed = false;
 			let delays = this.delays;
 
 			for (var i = 0; i < delays.length; i++) {
 				let delay = delays[i];
-				if (!delay.complete())
+				if (!delay.complete(this.delayCounter))
 					delayed = true;
 				else if (delay.delete()) {
 					delays.splice(i, 1);
 				}
 			}
 
-			if (delayed)
+			if (delayed) {
 				return false;
+			}
+
+
 
 			if (!this.parent) {
 				super.update();
@@ -241,12 +231,133 @@ class Timer extends Counter {
 			}
 
 			for (let interval of this.intervals) {
-				interval.update();
+				interval.update(this);
 			}
 
-			return main();
+			if (main)
+				return main();
 		}
 
 		return false;
+	}
+}
+
+class LockstepDelay extends IncDelay {
+	constructor(delayTicks, updateQueue, counter) {
+		super(0, true);
+
+		this.delayTicks = delayTicks;
+		this.updateQueue = updateQueue;
+		this.counter = counter;
+	}
+
+	delete() {
+		return false;
+	}
+
+	enqueue(update) {}
+
+	process(update) {
+		if (!this.updateQueue.isHost && update.name == "SERVER_TICK") {
+			let tick = this.counter.tick;
+			let diff = update.tick - tick;
+			if (diff < this.delayTicks) {
+				this.delay = this.delayTicks;
+			}
+		}
+	}
+}
+
+class RenderTimer extends Timer {
+	constructor() {
+		super();
+		this.delay = null;
+	}
+
+	setMaxFrames(max) {
+		let delay = new MaxFrameDelay(1000.0/max);
+		if (this.delay == null) {
+			this.delay = delay;
+			this.addDelay(this.delay);
+		}
+	}
+
+	render() {}
+}
+
+class GameTimer extends RenderTimer {
+	constructor(timer, renderFunc, logicFunc) {
+		super();
+
+		this.renderFunc = renderFunc;
+		this.logicFunc = logicFunc;
+
+        this.updateInterval = DEFAULT_UPDATE_RATE;
+        this.updateTimer = timer || new Timer();
+
+        this.renderTime = 0;
+        this.updateTime = 0;
+        this.fps = 0;
+        this.tempFPS = 0;
+
+        this.ups = 0;
+        this.tempUPS = 0;
+    }
+
+	setRenderFunction(func) {
+		this.renderFunc = func;
+	}
+
+	setLogicFunction(func) {
+		this.logicFunc = func;
+	}
+
+	setUpdateRate(updateRate) {
+        this.updateInterval = 1000 / updateRate;
+    }
+
+	getDebugString() {
+        return "Tick: "+this.updateTimer.tick+"<br /> Time (ms): "+this.updateTimer.time+"<br /> FPS: "+this.fps+"<br /> UPS: "+this.ups;
+    }
+
+	update() {
+		let t = 0;
+
+		while (this.updateTime >= this.updateInterval && t < 20) { // < 7 so it can catch up and doesn't go crazy
+			if (!this.updateTimer.update(() => {
+				this.logicFunc(this.updateTimer.tick);
+
+				t++;
+
+				this.updateTime -= this.updateInterval;
+				this.tempUPS++;
+
+				return true;
+			})) {
+				this.updateTime -= this.updateInterval;
+			}
+		}
+	}
+
+	render() {
+		return super.update(() => {
+            this.update();
+			this.renderFunc();
+
+            this.renderTime += this.deltaTime;
+            this.updateTime += this.deltaTime;
+            this.tempFPS++;
+
+            if (this.renderTime >= 1000) {
+                this.fps = this.tempFPS;
+                this.ups = this.tempUPS;
+
+                this.renderTime = 0;
+                this.tempFPS = 0;
+                this.tempUPS = 0;
+            }
+
+            return true;
+        });
 	}
 }

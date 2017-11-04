@@ -3,7 +3,7 @@ let _trans3 = new Ammo.btTransform();
 class Physics extends Timer {
     constructor() {
         super();
-        
+
         this.dynamicsWorld = null;
 
         this.objects = [];
@@ -14,7 +14,7 @@ class Physics extends Timer {
         this.dispatcher = new Ammo.btCollisionDispatcher(this.collisionConfiguration);
         this.overlappingPairCache = new Ammo.btDbvtBroadphase();
         this.solver = new Ammo.btSequentialImpulseConstraintSolver();
-        
+
         this.dynamicsWorld = new Ammo.btDiscreteDynamicsWorld(this.dispatcher, this.overlappingPairCache, this.solver, this.collisionConfiguration);
         this.dynamicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
     }
@@ -78,7 +78,7 @@ class Physics extends Timer {
 
         body.setDamping(0, 0.2);
         body.setActivationState(4);
-        body.setFriction(0.6);
+        body.setFriction(0.8);
 
         return body;
     }
@@ -122,8 +122,8 @@ class Physics extends Timer {
             let rot = prop.rot;
 
             _trans3 = body.getWorldTransform();
-            //body.getMotionState().getWorldTransform(_trans3);  
-            
+            //body.getMotionState().getWorldTransform(_trans3);
+
             _trans3.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
             let rows = rot;
             let matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
@@ -157,10 +157,10 @@ class Physics extends Timer {
         let pos = {x: origin.x(), y: origin.y(), z: origin.z()};
         let rot = rows;
 
-        let result = {index: index, 
+        let result = {index: index,
                          pos: pos,
                          rot: rot,
-                         aVel: {x: aVel.x(), y: aVel.y(), z: aVel.z()}, 
+                         aVel: {x: aVel.x(), y: aVel.y(), z: aVel.z()},
                          lVel: {x: lVel.x(), y: lVel.y(), z: lVel.z()}
                      };
 

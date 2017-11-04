@@ -5,7 +5,7 @@ class PickingPhysicsUpdater extends UpdateProcessor {
         this.clientId = -1;
         this.physics = physics;
         this.timer = timer;
-        
+
         this.handles = [];
 
         for (let i = 0; i < 100; i++)
@@ -21,8 +21,8 @@ class PickingPhysicsUpdater extends UpdateProcessor {
             let body = this.physics.objects[update.index];
             let pos = update.data;
 
-            this.handles[this.clientId] = this.physics.createJoint({type:"point2point", 
-                                                   body1: body, 
+            this.handles[this.clientId] = this.physics.createJoint({type:"point2point",
+                                                   body1: body,
                                                    position: pos});
 
             console.log(update.name);
@@ -44,7 +44,5 @@ class PickingPhysicsUpdater extends UpdateProcessor {
         } else if (update.name == "RESET_ALL") {
             this.physics.setAllObjectProps(update.props);
         }
-
-        return Networking.CONTINUE_DELETE;
     }
 }

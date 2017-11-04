@@ -13,6 +13,8 @@ for (var i = -1; i < MAX_CLIENTS; i++) {
 	clients.push({id: -1, socket: null});
 }
 
+clients[0].id = 0;
+
 var updates = [];
 
 wss.on('connection', function connection(ws) {
@@ -36,7 +38,6 @@ wss.on('connection', function connection(ws) {
     let send = [];
     for (let cl of clients) {
         if (cl.id > -1) {
-            //console.log(cl.isHost);
             send.push({id: cl.id, isHost: cl.isHost});
         }
     }

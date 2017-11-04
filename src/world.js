@@ -2,28 +2,51 @@ let _trans = new Ammo.btTransform(); // taking this out of the loop below us red
 
 const DEFAULT_UPDATE_RATE = 1000/60;
 
-class World extends Timer {
-    constructor(renderer, physics, updatePool) {
-        super();
+class World extends GameTimer {
+    constructor(timer, renderer, physics, updatePool, controllers) {
+        super(timer);
 
         this.objects = [];
+
         this.renderer = renderer;
         this.physics = physics;
-        //this.networking = networking;
         this.updatePool = updatePool;
+        this.controllers = controllers;
 
-        this.updateInterval = DEFAULT_UPDATE_RATE;
-        this.updateTimer = new Timer();
+        this.picker = new Picker(this.renderer, this.physics, this.controllers, this.updatePool.myClient);
 
-        this.picker = new Picker(this.renderer, this.physics, this.updateTimer);
+        this.setRenderFunction(() => {
+            for (let obj of this.objects) {
+                let body = obj.physicsData.body;
+                let mesh = obj.renderData.mesh;
+                let mS = body.getMotionState();
+                if (mS) {
+                    mS.getWorldTransform(_trans);
 
-        this.renderTime = 0;
-        this.updateTime = 0;
-        this.fps = 0;
-        this.tempFPS = 0;
+                    let origin = _trans.getOrigin();
+                    let rotation = _trans.getRotation();
 
-        this.ups = 0;
-        this.tempUPS = 0;
+                    mesh.position.set(origin.x(), origin.y(), origin.z());
+                    mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+                }
+            }
+
+            this.renderer.render();
+        });
+
+        this.setLogicFunction((frame) => {
+            try {
+                this.picker.update(frame);
+                this.controllers.update(frame);
+                this.updatePool.update(frame);
+                this.physics.update(this.updateInterval / 1000.0);
+            } catch (e) {
+                if (e instanceof LockstepQueueError) {
+                    console.log("inc delay");
+                    this.updateTimer.addDelay(new IncDelay(10, true));
+                } else throw e;
+            }
+        });
     }
 
     init() {
@@ -70,74 +93,7 @@ class World extends Timer {
         this.objects = [];
     }
 
-    setUpdateRate(updateRate) {
-        this.updateInterval = 1000/updateRate;
-    }
-
     getDebugString() {
-        return "Tick: "+this.updateTimer.tick+"<br /> Time (ms): "+this.updateTimer.time+"<br /> FPS: "+this.fps+"<br /> UPS: "+this.ups+" <br />Net updates: "+this.updatePool.processedUpdates;
-    }
-
-    update() {
-        return super.update(() => {
-            const dt = this.updateInterval/1000.0;
-            let t = 0;
-            while (this.updateTime >= this.updateInterval && t < 7) { // < 7 so it can catch up and doesn't go crazy
-                if (!this.updateTimer.update(() => {
-                    //if (this.networking)
-                    //    this.networking.update();
-
-                    this.picker.update();
-                    try {
-                        this.updatePool.update(this.updateTimer.tick);
-                        this.physics.update(dt);
-
-                        t++;
-
-                        this.updateTime -= this.updateInterval;
-                        this.tempUPS++;
-                    } catch (e) {
-                        this.updateTimer.addDelay(new IncDelay(5, true));
-                    }
-
-                    return true;
-                })) {
-                    this.updateTime -= this.updateInterval;
-                    //console.log("DD");
-                }
-            }
-
-            for (let obj of this.objects) {
-                let body = obj.physicsData.body;
-                let mesh = obj.renderData.mesh;
-                let mS = body.getMotionState();
-                if (mS) {
-                    mS.getWorldTransform(_trans);
-
-                    let origin = _trans.getOrigin();
-                    let rotation = _trans.getRotation();
-
-                    mesh.position.set(origin.x(), origin.y(), origin.z());
-                    mesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
-                }
-            }
-
-            this.renderer.render();
-
-            this.renderTime += this.deltaTime;
-            this.updateTime += this.deltaTime;
-            this.tempFPS++;
-
-            if (this.renderTime >= 1000) {
-                this.fps = this.tempFPS;
-                this.ups = this.tempUPS;
-
-                this.renderTime = 0;
-                this.tempFPS = 0;
-                this.tempUPS = 0;
-            }
-
-            return true;
-        });
+        return super.getDebugString() + " <br />Net updates: "+this.updatePool.processedUpdates+" <br />Controller updates: "+this.controllers.updates;
     }
 }

@@ -2,15 +2,15 @@ class Ball {
     constructor(props) {
         this.props = props;
     	//properties
-    	
-    	let size = props.size||{radius: 0};
+
+    	let size = props.radius||{radius: 0};
     	let position = props.position||{x: 0, y: 0, z: 0};
     	let rotation = props.rotation||{x: 0, y: 0, z: 0};
     	let mass = props.mass||0;
     	let color = props.color||0;
 
     	//3d rendering
-    	
+
     	let geometry = new THREE.SphereGeometry(size.radius, 32, 32);
         let material = new THREE.MeshPhongMaterial({color: color});
 
