@@ -2,7 +2,7 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 	constructor(connection) {
 		super(connection);
 
-		this.queuedUpdates = [];
+		this.updates = new UpdateStream();
 		this.readingClients = [];
 	}
 
@@ -12,12 +12,7 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 		return super.addClient(id, isHost);
 	}
 
-	update(frame) {
-		super.update();
-
-		if (!this.connected)
-			return;
-
+	queueUpdates(frame) {
 		let applied = [];
 		//process host first
 		for (let stream of this.streams) {
@@ -37,7 +32,7 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 							}
 						}
 
-						this.queuedUpdates.push(u);
+						this.updates.push(u);
 					} else if (u.frame < frame) {
 						console.log("frame behind "+u.frame+", "+frame+": "+u.name);
 						it.remove();
@@ -47,12 +42,12 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 						if (!this.isHost && u.name == "HOST_TICK") {
 							let diff = u.tick - frame;
 							if (diff < LATENCY) {
-								this.queuedUpdates.push(u);
+								this.updates.push(u);
 								throw new LockstepQueueError(diff);
 							}
 						}
 
-						this.queuedUpdates.push(u);
+						this.updates.push(u);
 					}
 				}
 
@@ -70,7 +65,7 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 					let updated = it.hasNext();
 					while (it.hasNext()) {
 						let u = it.remove();
-						this.queuedUpdates.push(u);
+						this.updates.push(u);
 						i++;
 					}
 
@@ -79,10 +74,10 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 					}
 				} else {
 					let index = this.streamIds.indexOf(stream.id);
-					while (this.readingClients[index] > 0 && it.hasNext()) {
+
+					while (this.readingClients[index]-- > 0 && it.hasNext()) {
 						let u = it.remove();
-						this.queuedUpdates.push(u);
-						this.readingClients[index]--;
+						this.updates.push(u);
 					}
 
 					if (this.readingClients[index] > 0) {
@@ -93,10 +88,19 @@ class LockstepUpdateQueue extends NetworkedUpdateQueue {
 		}
 
 		if (this.isHost && applied.length > 0) {
-			this.push({name: "APPLY", frame, updateMeta: applied});
+			this.myClient.push({name: "APPLY", frame, updateMeta: applied});
 		}
+	}
 
-		let it = new BasicIterator(this.queuedUpdates);
+	update(frame) {
+		super.update();
+
+		if (!this.connected)
+			return;
+
+		this.queueUpdates(frame);
+
+		let it = this.updates.iterator();
 		while (it.hasNext()) {
 			let u = it.remove();
 

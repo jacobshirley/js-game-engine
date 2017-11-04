@@ -87,6 +87,6 @@ class World extends GameTimer {
     }
 
     getDebugString() {
-        return super.getDebugString() + " <br />Net updates: "+this.updatePool.processedUpdates+" <br />Controller updates: "+this.controllers.updates;
+        return super.getDebugString() + " <br />Net updates: " + this.updatePool.processedUpdates + " <br />Controller updates: " + this.controllers.updates;
     }
 }

@@ -1,9 +1,7 @@
 let _trans3 = new Ammo.btTransform();
 
-class Physics extends Timer {
+class Physics {
     constructor() {
-        super();
-
         this.dynamicsWorld = null;
 
         this.objects = [];
@@ -190,8 +188,6 @@ class Physics extends Timer {
     }
 
     update(speed) {
-        return super.update(() => {
-            this.dynamicsWorld.stepSimulation(speed, 7);
-        });
+        this.dynamicsWorld.stepSimulation(speed, 7);
     }
 }

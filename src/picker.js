@@ -37,7 +37,7 @@ class Picker {
 
 	                let intersection = new THREE.Vector3();
 
-	                if (raycaster.ray.intersectPlane(ct.draggingPlane, intersection)) {
+	                if (raycaster.ray.intersectPlane(ct.userData.draggingPlane, intersection)) {
 						this.renderer.orbitControls.enableRotate = false;
 
 						let body = ct.userData.selected.userData.body;

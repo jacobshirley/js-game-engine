@@ -241,13 +241,15 @@ class Timer extends Counter {
 }
 
 class LockstepTimer extends Timer {
-	constructor(client, delay) {
+	constructor(client, delay, maxDelay = 50, syncInterval = 5) {
 		super();
 
 		this.client = client;
 		this.delay = delay;
+		this.maxDelay = maxDelay;
+		this.syncInterval = syncInterval;
 
-		let interval = new Interval(5, true);
+		let interval = new Interval(syncInterval, true);
 
 		interval.on('complete', () => {
 			if (this.client.isHost)
@@ -270,7 +272,7 @@ class LockstepTimer extends Timer {
 
 	process(update) {
 		if (update.name == "HOST_TICK") {
-			if (update.tick - this.tick > 20) {
+			if (update.tick - this.tick > this.maxDelay) {
 				this.tick = update.tick - 1;
 				this.time = update.time;
 
