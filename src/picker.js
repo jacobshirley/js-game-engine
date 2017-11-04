@@ -18,7 +18,6 @@ class Picker {
 		this.mouseDown = false;
 
 		this.controllers.on("mousedown", (ct) => {
-			console.log("md");
 	        let renderer = this.renderer;
 
 	        let intersects = renderer.raycastObjects(new THREE.Vector2(ct.x, ct.y));
@@ -27,12 +26,12 @@ class Picker {
 	            let obj = intersects[0].object;
 
 	            if (!obj.userData.static) {
-	                ct.selected = obj;
+	                ct.userData.selected = obj;
 
 	                let p = intersects[0].point;
 
-					ct.draggingPlane = new THREE.Plane();
-	                ct.draggingPlane.setFromNormalAndCoplanarPoint(renderer.camera.getWorldDirection(ct.draggingPlane.normal), p);
+					ct.userData.draggingPlane = new THREE.Plane();
+	                ct.userData.draggingPlane.setFromNormalAndCoplanarPoint(renderer.camera.getWorldDirection(ct.userData.draggingPlane.normal), p);
 
 	                let raycaster = renderer.raycaster;
 
@@ -41,12 +40,10 @@ class Picker {
 	                if (raycaster.ray.intersectPlane(ct.draggingPlane, intersection)) {
 						this.renderer.orbitControls.enableRotate = false;
 
-						let body = ct.selected.userData.body;
+						let body = ct.userData.selected.userData.body;
 
-						let pos = ct.selected.worldToLocal(p);
+						let pos = ct.userData.selected.worldToLocal(p);
 		                let i = this.physics.objects.indexOf(body);
-
-			            console.log("CREATING");
 
 		               	let event = {frame: this.frame, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
 		                this.client.push(event);
@@ -56,31 +53,28 @@ class Picker {
 		});
 
 		this.controllers.on("mouseup", (ct) => {
-			console.log("mu");
-			if (ct.selected) {
-				ct.selected = null;
-
-				let handle = ct.handle;
+			if (ct.userData.selected) {
+				ct.userData.selected = null;
 
 				if (this.client) {
 	        		let event = {frame: this.frame, name: "DESTROY"};
 	            	this.client.push(event);
 	            }
 
-				ct.draggingPlane = new THREE.Plane();
+				ct.userData.draggingPlane = new THREE.Plane();
 				this.renderer.orbitControls.enableRotate = true;
 			}
 		});
 
 		this.controllers.on("mousemove", (ct) => {
 			//console.log("mo");
-	        if (ct.selected) {
+	        if (ct.userData.selected) {
 	            let raycaster = this.renderer.raycaster;
 	            raycaster.setFromCamera(ct, this.renderer.camera);
 
 	            let intersection = new THREE.Vector3();
 
-	            if (raycaster.ray.intersectPlane(ct.draggingPlane, intersection)) {
+	            if (raycaster.ray.intersectPlane(ct.userData.draggingPlane, intersection)) {
 	                let newInt = new THREE.Vector3();
 	                newInt.copy(intersection);
 
@@ -105,7 +99,6 @@ class Picker {
 	                } else {
 						let event = {frame: this.frame, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
 		                this.client.push(event);
-			            //ct.handle.setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
 	                }
 	            }
 	        }

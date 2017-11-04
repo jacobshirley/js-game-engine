@@ -216,8 +216,6 @@ class Timer extends Counter {
 				return false;
 			}
 
-
-
 			if (!this.parent) {
 				super.update();
 			} else {
@@ -242,27 +240,41 @@ class Timer extends Counter {
 	}
 }
 
-class LockstepDelay extends IncDelay {
-	constructor(delayTicks, updateQueue, counter) {
-		super(0, true);
+class LockstepTimer extends Timer {
+	constructor(client, delay) {
+		super();
 
-		this.delayTicks = delayTicks;
-		this.updateQueue = updateQueue;
-		this.counter = counter;
+		this.client = client;
+		this.delay = delay;
+
+		let interval = new Interval(5, true);
+
+		interval.on('complete', () => {
+			if (this.client.isHost)
+				this.client.push({name: "HOST_TICK", tick: this.tick, time: this.time});
+		});
+
+		this.addInterval(interval);
 	}
 
-	delete() {
-		return false;
+	update(main) {
+		try {
+			return super.update(main);
+		} catch (e) {
+			if (e instanceof LockstepQueueError) {
+				console.log("Delaying");
+				this.addDelay(new IncDelay(this.delay, true));
+			} else throw e;
+		}
 	}
-
-	enqueue(update) {}
 
 	process(update) {
-		if (!this.updateQueue.isHost && update.name == "SERVER_TICK") {
-			let tick = this.counter.tick;
-			let diff = update.tick - tick;
-			if (diff < this.delayTicks) {
-				this.delay = this.delayTicks;
+		if (update.name == "HOST_TICK") {
+			if (update.tick - this.tick > 20) {
+				this.tick = update.tick - 1;
+				this.time = update.time;
+
+				this.addDelay(new IncDelay(this.delay, true));
 			}
 		}
 	}

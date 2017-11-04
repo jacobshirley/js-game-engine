@@ -8,13 +8,12 @@ function main() {
     var renderer, physics, controllers, world;
     var connection = new TestConnection(50, 0);
     connection = new WebSocketConnection("ws://127.0.0.1:8080/");
-    //var p2pNetworking = new Networking(connection, 64);
 
     renderer = new Renderer();
     physics = new Physics();
 
     var updatePool = new LockstepUpdateQueue(connection);
-    var timer = new Timer();
+    var timer = new LockstepTimer(updatePool, 5);
     let physicsUpdater = new PickingPhysicsUpdater(updatePool, physics);
     //var serverHandler = new ServerConnection(connection, updatePool, physicsUpdater);
 
@@ -27,7 +26,7 @@ function main() {
     world.init();
     world.picker.enabled = true;
 
-    //updatePool.addProcessor(controllers);
+    updatePool.addProcessor(timer);
     updatePool.addProcessor(new WorldUpdater(updatePool, physicsUpdater, world));
 
     //create the lighting

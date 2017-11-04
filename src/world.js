@@ -35,17 +35,10 @@ class World extends GameTimer {
         });
 
         this.setLogicFunction((frame) => {
-            try {
-                this.picker.update(frame);
-                this.controllers.update(frame);
-                this.updatePool.update(frame);
-                this.physics.update(this.updateInterval / 1000.0);
-            } catch (e) {
-                if (e instanceof LockstepQueueError) {
-                    console.log("inc delay");
-                    this.updateTimer.addDelay(new IncDelay(10, true));
-                } else throw e;
-            }
+            this.picker.update(frame);
+            this.controllers.update(frame);
+            this.updatePool.update(frame);
+            this.physics.update(this.updateInterval / 1000.0);
         });
     }
 
