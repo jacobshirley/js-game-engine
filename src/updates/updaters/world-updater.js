@@ -1,4 +1,6 @@
-class WorldUpdater extends DelegateUpdater {
+import DelegateUpdater from "../delegate-updater.js";
+
+export default class WorldUpdater extends DelegateUpdater {
 	constructor(queue, delegate, world) {
 		super(queue, delegate);
 		this.world = world;

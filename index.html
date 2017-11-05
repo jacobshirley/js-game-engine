@@ -7,32 +7,41 @@
 		<script src="bower_components/threejs/build/three.min.js"></script>
 		<script src="bower_components/threejs/examples/js/controls/OrbitControls.js"></script>
 
-		<script src="src/three/renderer.js"></script>
-		<script src="src/ammo/physics.js"></script>
+		<script type="module" src="src/three/renderer.js"></script>
+		<script type="module" src="src/ammo/physics.js"></script>
 
-		<script src="src/objects/block.js"></script>
-		<script src="src/objects/ball.js"></script>
+		<script type="module" src="src/objects/block.js"></script>
+		<script type="module" src="src/objects/ball.js"></script>
 
-		<script src="src/controller/controller.js"></script>
+		<script type="module" src="src/controller/controller.js"></script>
 
-		<script src="src/net/networking.js"></script>
-		
-		<script src="src/updates/stream.js"></script>
-		<script src="src/updates/iteration.js"></script>
-		<script src="src/updates/lockstep-queue-error.js"></script>
-		<script src="src/updates/updater.js"></script>
-		<script src="src/updates/lockstep.js"></script>
-		<script src="src/updates/updaters/world-updater.js"></script>
-		<script src="src/updates/updaters/picking-physics-updater.js"></script>
+		<script type="module" src="src/net/networking.js"></script>
 
-		<script src="src/timing/timing.js"></script>
+		<script type="module" src="src/updates/stream.js"></script>
+		<script type="module" src="src/updates/iteration.js"></script>
+		<script type="module" src="src/updates/update-processor.js"></script>
+		<script type="module" src="src/updates/update-queue.js"></script>
+		<script type="module" src="src/updates/delegate-updater.js"></script>
+		<script type="module" src="src/updates/networked-update-queue.js"></script>
+		<script type="module" src="src/updates/lockstep-queue-error.js"></script>
+		<script type="module" src="src/updates/lockstep-update-queue.js"></script>
+		<script type="module" src="src/updates/updaters/world-updater.js"></script>
+		<script type="module" src="src/updates/updaters/picking-physics-updater.js"></script>
 
-		<script src="src/picker.js"></script>
-		<script src="src/world.js"></script>
+		<script type="module" src="src/timing/counter.js"></script>
+		<script type="module" src="src/timing/timer.js"></script>
+		<script type="module" src="src/timing/render-timer.js"></script>
+		<script type="module" src="src/timing/game-timer.js"></script>
+		<script type="module" src="src/timing/lockstep-timer.js"></script>
+		<script type="module" src="src/timing/delay.js"></script>
+		<script type="module" src="src/timing/interval.js"></script>
+
+		<script type="module" src="src/picker.js"></script>
+		<script type="module" src="src/world.js"></script>
 	</head>
 
 	<body style="margin:0">
 		<div id="debug" style="position:absolute; z-index:500; top:0; left: 0; min-width:200px; padding:50px; color:white; border: 2px solid red; padding:20px;">
-		<script src="script.js"></script>
+		<script type="module" src="script.js"></script>
 	</body>
 </html>

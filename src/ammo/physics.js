@@ -1,6 +1,8 @@
+import Block from "../objects/block.js";
+
 let _trans3 = new Ammo.btTransform();
 
-class Physics {
+export default class Physics {
     constructor() {
         this.dynamicsWorld = null;
 

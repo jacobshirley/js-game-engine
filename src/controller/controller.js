@@ -1,4 +1,6 @@
-class Controller extends EventEmitter {
+import UpdateStream from "../updates/stream.js";
+
+export class Controller extends EventEmitter {
     constructor(id) {
         super();
 
@@ -9,7 +11,7 @@ class Controller extends EventEmitter {
     }
 }
 
-class LocalController extends Controller {
+export class LocalController extends Controller {
     constructor(id) {
         super(id);
 
@@ -54,7 +56,7 @@ class LocalController extends Controller {
     }
 }
 
-class Controllers extends EventEmitter {
+export default class Controllers extends EventEmitter {
     constructor(timer, client) {
         super();
 

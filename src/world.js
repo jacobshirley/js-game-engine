@@ -1,8 +1,11 @@
+import GameTimer from "./timing/game-timer.js";
+import Picker from "./picker.js";
+
 let _trans = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
 
 const DEFAULT_UPDATE_RATE = 1000/60;
 
-class World extends GameTimer {
+export default class World extends GameTimer {
     constructor(timer, renderer, physics, updatePool, controllers) {
         super(timer);
 

@@ -1,4 +1,6 @@
-class UpdateStream {
+import BasicIterator from "./iteration.js";
+
+export default class UpdateStream {
 	constructor() {
 		this.updates = [];
 	}
@@ -12,7 +14,7 @@ class UpdateStream {
 	}
 }
 
-class ClientUpdateStream extends UpdateStream {
+export class ClientUpdateStream extends UpdateStream {
 	constructor(id, isHost) {
 		super();
 
@@ -26,7 +28,7 @@ class ClientUpdateStream extends UpdateStream {
 	}
 }
 
-class LocalClientUpdateStream extends ClientUpdateStream {
+export class LocalClientUpdateStream extends ClientUpdateStream {
 	constructor(connection, id, isHost) {
 		super(id, isHost);
 

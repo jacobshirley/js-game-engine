@@ -2,7 +2,7 @@ function inRange(x, min, max) {
 	return x >= min && x <= max;
 }
 
-class Picker {
+export default class Picker {
 	constructor(renderer, physics, controllers, client) {
 		this.enabled = false;
 

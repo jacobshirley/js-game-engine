@@ -1,58 +1,9 @@
-const LATENCY = 5;
+import UpdateQueue from "./update-queue.js";
+import {ClientUpdateStream, LocalClientUpdateStream} from "./stream.js";
 
-class UpdateProcessor {
-	constructor(pool) {
-		this.pool = pool;
-	}
+const SERVER_ID = 0;
 
-	process(update) {}
-
-	enqueue(update) {}
-}
-
-class DelegateUpdater extends UpdateProcessor {
-	constructor(pool, delegate) {
-		super(pool);
-
-		this.delegate = delegate;
-	}
-
-	setDelegate(delegate) {
-		this.delegate = delegate;
-	}
-
-	process(update) {
-		if (this.delegate)
-			this.delegate.process(update);
-	}
-}
-
-class UpdateQueue {
-	constructor() {
-		this.processors = [];
-		this.streams = [];
-
-		this.processedUpdates = 0;
-	}
-
-	addStream(stream) {
-		this.streams.push(stream);
-	}
-
-	removeStream(stream) {
-		this.streams.splice(this.streams.indexOf(stream), 1);
-	}
-
-	addProcessor(processor) {
-		this.processors.push(processor);
-	}
-
-	removeProcessor(processor) {
-		this.processors.splice(this.processors.indexOf(processor), 1);
-	}
-}
-
-class NetworkedUpdateQueue extends UpdateQueue {
+export default class NetworkedUpdateQueue extends UpdateQueue {
 	constructor(connection) {
 		super();
 

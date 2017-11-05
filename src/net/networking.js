@@ -1,6 +1,6 @@
 let SERVER_ID = 0;
 
-class Connection extends EventEmitter {
+export default class Connection extends EventEmitter {
 	constructor() {
 		super();
 		this.connected = false;
@@ -15,7 +15,7 @@ class Connection extends EventEmitter {
 	send(data) {}
 }
 
-class WebSocketConnection extends Connection {
+export class WebSocketConnection extends Connection {
 	constructor(ip) {
 		super();
 
@@ -47,7 +47,7 @@ class WebSocketConnection extends Connection {
 	}
 }
 
-class TestConnection extends Connection {
+export class TestConnection extends Connection {
 	constructor(latency, packetLossChance) {
 		super();
 

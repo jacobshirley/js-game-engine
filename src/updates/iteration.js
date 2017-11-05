@@ -1,4 +1,4 @@
-class BasicIterator {
+export default class BasicIterator {
 	constructor(updateData, copy) {
 		this.updateData = updateData;
 		this.index = 0;

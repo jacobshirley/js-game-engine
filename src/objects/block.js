@@ -16,12 +16,12 @@
 	}
 }*/
 
-class Block {
+export default class Block {
     constructor(props) {
         this.props = props;
 
     	//properties
-    	
+
     	let size = props.size||{width:0, height:0, length:0};
     	let position = props.position||{x: 0, y: 0, z: 0};
     	let rotation = props.rotation||{x: 0, y: 0, z: 0};
@@ -29,7 +29,7 @@ class Block {
     	let color = props.color||0;
 
     	//3d rendering
-    	
+
     	let geometry = new THREE.BoxGeometry(size.width * 2, size.height * 2, size.length * 2);
         let material = new THREE.MeshPhongMaterial({color: color});
 

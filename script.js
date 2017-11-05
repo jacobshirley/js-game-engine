@@ -1,3 +1,15 @@
+import {TestConnection, WebSocketConnection} from "./src/net/networking.js";
+import Renderer from "./src/three/renderer.js";
+import Physics from "./src/ammo/physics.js";
+import Block from "./src/objects/block.js";
+import LockstepUpdateQueue from "./src/updates/lockstep-update-queue.js";
+import LockstepTimer from "./src/timing/lockstep-timer.js";
+import PickingPhysicsUpdater from "./src/updates/updaters/picking-physics-updater.js";
+import Controllers from "./src/controller/controller.js";
+import World from "./src/world.js";
+import WorldUpdater from "./src/updates/updaters/world-updater.js";
+import Interval from "./src/timing/interval.js";
+
 function toRadians(degrees) {
     return degrees * (Math.PI / 180);
 }
@@ -7,7 +19,7 @@ const BRICKS = 10;
 function main() {
     var renderer, physics, controllers, world;
     var connection = new TestConnection(50, 0);
-    connection = new WebSocketConnection("ws://127.0.0.1:8080/");
+    //connection = new WebSocketConnection("ws://127.0.0.1:8080/");
 
     renderer = new Renderer();
     physics = new Physics();

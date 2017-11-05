@@ -1,4 +1,4 @@
-class Renderer {
+export default class Renderer {
 	constructor() {
 		this.orbitControls = null;
 		this.scale = 1;

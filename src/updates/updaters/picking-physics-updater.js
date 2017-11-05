@@ -1,4 +1,6 @@
-class PickingPhysicsUpdater extends UpdateProcessor {
+import UpdateProcessor from "../update-processor.js";
+
+export default class PickingPhysicsUpdater extends UpdateProcessor {
     constructor(pool, physics, timer) {
         super(pool);
 

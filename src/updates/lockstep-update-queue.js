@@ -1,4 +1,10 @@
-class LockstepUpdateQueue extends NetworkedUpdateQueue {
+import UpdateStream from "./stream.js";
+import NetworkedUpdateQueue from "./networked-update-queue.js";
+import LockstepQueueError from "./lockstep-queue-error.js";
+
+const SERVER_ID = 0;
+
+export default class LockstepUpdateQueue extends NetworkedUpdateQueue {
 	constructor(connection) {
 		super(connection);
 
