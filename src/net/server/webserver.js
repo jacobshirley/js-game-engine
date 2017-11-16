@@ -1,86 +1,95 @@
-var WebSocketServer = require('ws').Server
-  , wss = new WebSocketServer({ port: 8080 });
+import Timer from "../../timing/timer.js";
+import {UpdateStream, ClientUpdateStream, ClientList} from "../../updates/stream.js";
+
+class Server {
+    constructor(clientList) {
+        this.clients = clientList;
+    }
+
+    update() {
+        let id = this.clients.iterator();
+    }
+}
+
+function run() {
+    let timer = new Timer();
+    let server = new Server();
+
+    timer.update(() => {
+        server.update();
+    });
+}
+
+class ServerClientUpdateStream extends ClientUpdateStream {
+    constructor(ws, id, isHost) {
+        super(id, isHost);
+        this.ws = ws;
+    }
+}
+
+class ServerClientList extends ClientList {
+    constructor(wss) {
+        super();
+        this.wss = wss;
+        this.localClient = this.create();
+
+        this.wss.on('connection', (ws) => {
+            let cl = this.create();
+            if (this.length() == 2) {
+                this.setHost(cl.id);
+            }
+
+            ws.id = cl.id;
+        	this.localClient.push({name: "CONNECTED", id: cl.id, isHost: cl.isHost, clients: this.jsonObject()});
+
+        	ws.on('message', (message) => {
+        		cl.push({from: cl.id, us: new UpdateStream(JSON.parse(message))});
+        	});
+
+        	ws.on('close', (ws2) => {
+        		this.remove(cl.id);
+         	});
+        });
+
+        create(id, isHost, ws) {
+            if (!ws)
+                return super.create(id, isHost);
+
+            return this.push(new ServerClientUpdateStream(ws, id, isHost));
+        }
+    }
+
+    local() {
+        return this.localClient;
+    }
+}
+
+var WebSocketServer = require('ws').Server;
+let wss = new WebSocketServer({ port: 8080 });
 
 var SERVER_INDEX = 0;
 var MAX_CLIENTS = 64;
 
-var clientIndices = [];
-var clients = [];
+const SEND_RATE = 1000 / 60;
 
-var SEND_RATE = 10;
-
-for (var i = -1; i < MAX_CLIENTS; i++) {
-	clients.push({id: -1, socket: null});
-}
-
-clients[0].id = 0;
-
-var updates = [];
-
-wss.on('connection', function connection(ws) {
-	var newId = -1;
-	for (var i = 0; i < clients.length; i++) {
-		if (i != SERVER_INDEX) {
-			if (clients[i].id == -1) {
-				newId = i;
-				break;
-			}
-		}
-	}
-
-	ws.id = newId;
-
-	clientIndices.push(ws.id);
-	clients[ws.id].id = ws.id;
-    clients[ws.id].isHost = clientIndices.length == 1;
-	clients[ws.id].socket = ws;
-
-    let send = [];
-    for (let cl of clients) {
-        if (cl.id > -1) {
-            send.push({id: cl.id, isHost: cl.isHost});
-        }
-    }
-
-	updates.push({from: SERVER_INDEX, data: {name: "CONNECTED", isHost: clientIndices.length == 1, clients: send, id: ws.id}});
-
-	ws.on('message', function incoming(message) {
-		//console.log("got message "+message);
-		updates.push({from: ws.id, data: JSON.parse(message)});
-	});
-
-	ws.on('close', function (ws2) {
-		for (var i = 0; i < clientIndices.length; i++) {
-			var index = clientIndices[i];
-			if (clients[index].socket == ws) {
-				clients[index].id = -1;
-				clients[index].socket = null;
-				clientIndices.splice(i, 1);
-				break;
-			}
-		}
- 	});
-});
+var clients = new ServerClientList(wss);
 
 setInterval(function() {
-	if (updates.length > 0) {
-		for (var i = 0; i < clientIndices.length; i++) {
-			var id = clientIndices[i];
-			var client = clients[id];
-			var us = [];
+    let updates = [];
 
-			updates.forEach(function(update) {
-				if (update.from != id) {
-					us.push(update);
-				}
-			});
-			if (us.length > 0) {
-				var str = JSON.stringify(us);
-				client.socket.send(str);
-			}
-		}
-		updates = [];
+	let clientsIterator = clients.iterator();
+    while (clientsIterator.hasNext()) {
+		let client = clientsIterator.remove();
+        let id = client.id;
+
+		let pIt = client.iterator();
+
+        while (pIt.hasNext()) {
+            let uIt = pIt.iterator();
+            console.log("LOL");
+        }
 	}
+	updates = [];
 }, SEND_RATE);
 
 console.log("Running server...");

@@ -29,7 +29,6 @@ function main() {
     let physicsUpdater = new PickingPhysicsUpdater(updatePool, physics);
     //var serverHandler = new ServerConnection(connection, updatePool, physicsUpdater);
 
-    var myClient = updatePool.myClient;
     //updatePool.addStream(myClient);
 
     controllers = new Controllers(timer, updatePool);
@@ -117,7 +116,7 @@ function main() {
     }
 
     var DELAY = 200;
-    var INPUT_DELAY = 5; // in ticks
+    var INPUT_DELAY = 2; // in ticks
     var RESET_DELAY = 5000; // in ms
 
     let sendInterval = new Interval(INPUT_DELAY, true);

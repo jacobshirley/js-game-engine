@@ -16,7 +16,7 @@ export default class World extends GameTimer {
         this.updatePool = updatePool;
         this.controllers = controllers;
 
-        this.picker = new Picker(this.renderer, this.physics, this.controllers, this.updatePool.myClient);
+        this.picker = new Picker(this.renderer, this.physics, this.controllers, this.updatePool.local());
 
         this.setRenderFunction(() => {
             for (let obj of this.objects) {

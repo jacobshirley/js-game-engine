@@ -1,104 +1,101 @@
 import UpdateQueue from "./update-queue.js";
-import {ClientUpdateStream, LocalClientUpdateStream} from "./stream.js";
+import {ClientUpdateStream, LocalClientUpdateStream, ClientList} from "./stream.js";
 
 const SERVER_ID = 0;
 
-export default class NetworkedUpdateQueue extends UpdateQueue {
-	constructor(connection) {
-		super();
+class ClientUpdateList extends ClientList {
+	constructor(connection, ...args) {
+		super(...args);
 
+		this.localClientId = -1;
 		this.connection = connection;
 		this.connected = false;
+		this.events = new EventEmitter();
 
-		this.streamIds = [];
-
-		this.myClient = new LocalClientUpdateStream(this.connection, -1, true);
-		this.streams = [];
-
-		this.connection.on('message', (data) => {
+		this.connection.on("message", (data) => {
 			for (let i = 0; i < data.length; i++) {
 				let updates = data[i];
 
-				let client = this.getClient(updates.from);
-				if (!client)
-					client = this.addClient(updates.from, false);
+				let client = this.get(updates.from);
+				if (!client) {
+					client = this.create(updates.from);
+				}
 
 				client.cachedUpdates = client.cachedUpdates.concat(updates.data);
 			}
 		});
 	}
 
-	process(update) {
+	local() {
+		if (this.localClientId != -1)
+			return this.get(this.localClientId);
+	}
+
+	process() {
 		if (update.name == "CONNECTED") {
 			if (!this.connected) {
 				this.connected = true;
+				this.localClientId.id = update.id;
 
-				this.myClient.id = update.id;
-				this.myClient.isHost = update.isHost;
+				let client = new LocalClientUpdateStream(this.connection, update.id, update.isHost);
+				this.set(client);
 
-				this.setClient(update.id, this.myClient);
+				this.events.emit("connected", {client, me: true});
 			}
 
-			for (let cl of update.clients) {
-				this.addClient(cl.id, cl.isHost);
+			for (let client of update.clients) {
+				if (!this.has(client.id))
+					this.events.emit("connected", {client, me: false});
+
+				this.create(client.id, client.isHost);
 			}
 		} else if (update.name == "DISCONNECTED") {
 			for (let id of update.clients) {
-				this.removeClient(id);
+				this.remove(id);
 			}
 		} else if (update.name == "SET_HOST") {
-			this.myClient.isHost = true;
+			this.local().isHost = true;
 		}
+	}
+
+	destory() {}
+}
+
+export default class NetworkedUpdateQueue extends UpdateQueue {
+	constructor(connection) {
+		super();
+
+		this.connection = connection;
+
+		this.clientList = new ClientUpdateList(connection);
+
+		this.addProcessor(this.clientList);
+		this.streamIds = [];
+
+		this.streams = [];
+	}
+	local() {
+		return this.clientList.local();
 	}
 
 	get id() {
-		return this.myClient.id;
+		if (this.local)
+			return this.local().id;
+		else {
+			return -1;
+		}
 	}
 
 	get isHost() {
-		return this.myClient.isHost;
-	}
-
-	clientExists(id) {
-		return this.streamIds.indexOf(id) != -1;
-	}
-
-	getClient(id) {
-		return this.streams[this.streamIds.indexOf(id)];
-	}
-
-	addClient(id, isHost) {
-		if (!this.clientExists(id)) {
-			this.streamIds.push(id);
-
-			this.addStream(new ClientUpdateStream(id, isHost));
-		} else {
-			let cl = this.getClient(id);
-			cl.isHost = isHost;
-			this.setClient(id, cl);
-			return cl;
+		if (this.local())
+			return this.local().isHost;
+		else {
+			return false;
 		}
-
-		return this.getClient(id);
 	}
 
-	setClient(id, client) {
-		if (this.clientExists(id)) {
-			this.streams[this.streamIds.indexOf(id)] = client;
-		} else {
-			this.streamIds.push(id);
-
-			this.addStream(client);
-		}
-
-		return client;
-	}
-
-	removeClient(id) {
-		let index = this.streamIds.indexOf(id);
-
-		this.removeStream(this.streams[index]);
-		this.streamIds.splice(index, 1);
+	get connected() {
+		return this.clientList.connected;
 	}
 
 	recv() {
@@ -113,7 +110,7 @@ export default class NetworkedUpdateQueue extends UpdateQueue {
 	}
 
 	push(update) {
-		this.myClient.push(update);
+		this.local().push(update);
 	}
 
 	broadcast(update) {
@@ -122,7 +119,8 @@ export default class NetworkedUpdateQueue extends UpdateQueue {
 	}
 
 	flush() {
-		this.myClient.flush();
+		if (this.local())
+			this.local().flush();
 	}
 
 	update() {
@@ -134,7 +132,7 @@ export default class NetworkedUpdateQueue extends UpdateQueue {
 
 			while (jsonUpdater.hasNext()) {
 				let u = jsonUpdater.remove();
-				this.process(u);
+				//this.process(u);
 				for (let processor of this.processors) {
 			    	//processor.startProcess(u.clientId);
 			    	processor.process(u);

@@ -1,25 +1,26 @@
 export default class BasicIterator {
-	constructor(updateData, copy) {
-		this.updateData = updateData;
+	constructor(data, copy) {
+		this.data = data;
 		this.index = 0;
+		copy = copy || true;
 		if (copy)
-			this.updateData = [].concat(updateData);
+			this.data = [].concat(data);
 	}
 
 	hasNext() {
-		return this.index < this.updateData.length;
+		return this.index < this.data.length;
 	}
 
 	next() {
-		return this.updateData[this.index++];
+		return this.data[this.index++];
 	}
 
 	remove() {
 		this.index--;
 		if (this.index <= 0) {
 			this.index = 0;
-			return this.updateData.shift();
+			return this.data.shift();
 		}
-		return this.updateData.splice(this.index, 1);
+		return this.data.splice(this.index, 1);
 	}
 }

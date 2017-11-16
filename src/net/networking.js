@@ -3,6 +3,7 @@ let SERVER_ID = 0;
 export default class Connection extends EventEmitter {
 	constructor() {
 		super();
+		
 		this.connected = false;
 	}
 
