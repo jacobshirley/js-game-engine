@@ -1,21 +1,3 @@
-/*function Object() {
-	this.renderData = {}; //rendering related stuff in here
-	this.physicsData = {}; //physics related stuff in here
-    this.networkData = {};
-
-	this.x = function () {
-
-	}
-
-	this.y = function() {
-
-	}
-
-	this.rotation = function() {
-
-	}
-}*/
-
 export default class Block {
     constructor(props) {
         this.props = props;
@@ -55,6 +37,8 @@ export default class Block {
         mesh.userData.body = body;
         mesh.userData.static = this.props.mass == 0;
     }
+
+    
 
     copy() {
         return new Block(this.props);

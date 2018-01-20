@@ -1,9 +1,9 @@
 {
   "name": "dominos",
   "version": "1.0.0",
-  "description": "",
   "main": "environment.js",
   "scripts": {
+    "build-server": "browserify --node src/net/server/webserver.js  -o bundle.js -t [ babelify --presets [ es2015 ] ]",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -14,6 +14,20 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/Auriferous/jsdominos#readme",
   "dependencies": {
-    "ws": "^1.1.1"
+    "ws": "^1.1.5"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babelify": "^8.0.0",
+    "browserify": "^15.1.0",
+    "bufferutil": "^3.0.3"
+  },
+  "description": "",
+  "optionalDependencies": {
+    "bufferutil": "^3.0.3",
+    "utf-8-validate": "^4.0.0"
   }
 }

@@ -3,13 +3,13 @@ function inRange(x, min, max) {
 }
 
 export default class Picker {
-	constructor(renderer, physics, controllers, client) {
+	constructor(renderer, physics, controllers, queue) {
 		this.enabled = false;
 
 	    this.renderer = renderer;
 	    this.physics = physics;
 	    this.controllers = controllers;
-		this.client = client;
+		this.queue = queue;
 		this.frame = 0;
 
 	    this.floor = null;
@@ -45,8 +45,8 @@ export default class Picker {
 						let pos = ct.userData.selected.worldToLocal(p);
 		                let i = this.physics.objects.indexOf(body);
 
-		               	let event = {frame: this.frame, name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
-		                this.client.push(event);
+		               	let event = {name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
+		                this.queue.pushFramed(event);
 	                }
 	            }
 	        }
@@ -56,9 +56,9 @@ export default class Picker {
 			if (ct.userData.selected) {
 				ct.userData.selected = null;
 
-				if (this.client) {
-	        		let event = {frame: this.frame, name: "DESTROY"};
-	            	this.client.push(event);
+				if (this.queue) {
+	        		let event = {name: "DESTROY"};
+	            	this.queue.pushFramed(event);
 	            }
 
 				ct.userData.draggingPlane = new THREE.Plane();
@@ -97,8 +97,8 @@ export default class Picker {
 	                    console.log("in range in z "+inRange(localPos.z, -Z, Z)+", "+localPos.z);
 	                    return;*/
 	                } else {
-						let event = {frame: this.frame, name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
-		                this.client.push(event);
+						let event = {name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
+		                this.queue.pushFramed(event);
 	                }
 	            }
 	        }
@@ -114,8 +114,5 @@ export default class Picker {
 	}
 
 	update(frame) {
-		if (this.enabled) {
-			this.frame = frame;
-		}
 	}
 }

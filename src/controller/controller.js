@@ -68,13 +68,6 @@ export default class Controllers extends EventEmitter {
         this.controllers = []; //not in use yet
     }
 
-    getController(id) {
-        for (let ct of this.controllers) {
-            if (ct.id === id)
-                return ct;
-        }
-    }
-
     update(frame) {
         let it = this.local.updates.iterator();
         while (it.hasNext()) {

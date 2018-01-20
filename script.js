@@ -2,7 +2,7 @@ import {TestConnection, WebSocketConnection} from "./src/net/networking.js";
 import Renderer from "./src/three/renderer.js";
 import Physics from "./src/ammo/physics.js";
 import Block from "./src/objects/block.js";
-import LockstepUpdateQueue from "./src/updates/lockstep-update-queue.js";
+import LockstepUpdateQueue from "./src/updates/lockstep/lockstep.js";
 import LockstepTimer from "./src/timing/lockstep-timer.js";
 import PickingPhysicsUpdater from "./src/updates/updaters/picking-physics-updater.js";
 import Controllers from "./src/controller/controller.js";
@@ -27,7 +27,6 @@ function main() {
     var updatePool = new LockstepUpdateQueue(connection);
     var timer = new LockstepTimer(updatePool, 5);
     let physicsUpdater = new PickingPhysicsUpdater(updatePool, physics);
-    //var serverHandler = new ServerConnection(connection, updatePool, physicsUpdater);
 
     var myClient = updatePool.myClient;
     //updatePool.addStream(myClient);
@@ -117,7 +116,7 @@ function main() {
     }
 
     var DELAY = 200;
-    var INPUT_DELAY = 5; // in ticks
+    var INPUT_DELAY = 2; // in ticks
     var RESET_DELAY = 5000; // in ms
 
     let sendInterval = new Interval(INPUT_DELAY, true);

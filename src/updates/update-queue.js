@@ -1,17 +1,8 @@
 export default class UpdateQueue {
 	constructor() {
 		this.processors = [];
-		this.streams = [];
 
 		this.processedUpdates = 0;
-	}
-
-	addStream(stream) {
-		this.streams.push(stream);
-	}
-
-	removeStream(stream) {
-		this.streams.splice(this.streams.indexOf(stream), 1);
 	}
 
 	addProcessor(processor) {
@@ -21,4 +12,12 @@ export default class UpdateQueue {
 	removeProcessor(processor) {
 		this.processors.splice(this.processors.indexOf(processor), 1);
 	}
+
+	push(update) {}
+
+	pushFramed(update) {}
+}
+
+export class BasicUpdateQueue extends UpdateQueue {
+
 }

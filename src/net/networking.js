@@ -3,6 +3,7 @@ let SERVER_ID = 0;
 export default class Connection extends EventEmitter {
 	constructor() {
 		super();
+
 		this.connected = false;
 	}
 
@@ -58,7 +59,7 @@ export class TestConnection extends Connection {
 		this.emit('connected');
 
 		this.data = [];
-		this.data.push({from: SERVER_ID, data: {name: "CONNECTED", isHost: true, clients: [{id: 0, isHost: false}], id: 1}});
+		this.data.push({from: SERVER_ID, data: JSON.stringify({name: "CONNECTED", isHost: true, clients: [{id: 0, isHost: false}], id: 1})});
 
 		setInterval(() => {
 			if (this.data.length > 0 && Math.random() > this.packetLossChance) {

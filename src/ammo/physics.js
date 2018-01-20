@@ -110,35 +110,37 @@ export default class Physics {
         }
     }
 
+    setObjectProps(body, props) {
+        let aVel = prop.aVel;
+        let lVel = prop.lVel;
+
+        let pos = prop.pos;
+        let rot = prop.rot;
+
+        _trans3 = body.getWorldTransform();
+        //body.getMotionState().getWorldTransform(_trans3);
+
+        _trans3.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+        let rows = rot;
+        let matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
+                                      rows[1].x, rows[1].y, rows[1].z,
+                                      rows[2].x, rows[2].y, rows[2].z);
+
+        _trans3.setBasis(matrix);
+
+        body.setAngularVelocity(new Ammo.btVector3(aVel.x, aVel.y, aVel.z));
+        body.setLinearVelocity(new Ammo.btVector3(lVel.x, lVel.y, lVel.z));
+    }
+
     setAllObjectProps(props) {
     	let objects = this.objects;
     	for (let prop of props) {
             let body = objects[prop.index];
-
-            let aVel = prop.aVel;
-            let lVel = prop.lVel;
-
-            let pos = prop.pos;
-            let rot = prop.rot;
-
-            _trans3 = body.getWorldTransform();
-            //body.getMotionState().getWorldTransform(_trans3);
-
-            _trans3.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
-            let rows = rot;
-            let matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
-                                          rows[1].x, rows[1].y, rows[1].z,
-                                          rows[2].x, rows[2].y, rows[2].z);
-
-            _trans3.setBasis(matrix);
-
-            body.setAngularVelocity(new Ammo.btVector3(aVel.x, aVel.y, aVel.z));
-            body.setLinearVelocity(new Ammo.btVector3(lVel.x, lVel.y, lVel.z));
+            this.setObjectProps(body, prop);
     	}
     }
 
-    getObjectProps(index) {
-        let body = this.objects[index];
+    getObjectProps(body) {
         let aVel = body.getAngularVelocity();
         let lVel = body.getLinearVelocity();
 
@@ -172,8 +174,7 @@ export default class Physics {
     	let c = 0;
 
     	for (let body of this.objects) {
-    		props.push(this.getObjectProps(c));
-    		c++;
+    		props.push(this.getObjectProps(body));
     	}
 
     	return props;

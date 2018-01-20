@@ -1,86 +1,139 @@
-var WebSocketServer = require('ws').Server
-  , wss = new WebSocketServer({ port: 8080 });
+import Timer from "../../timing/timer.js";
+import UpdateStream from "../../updates/stream.js";
+import {ClientList, Client} from "../../updates/client.js";
+import BasicIterator from "../../updates/iteration.js";
 
-var SERVER_INDEX = 0;
-var MAX_CLIENTS = 64;
-
-var clientIndices = [];
-var clients = [];
-
-var SEND_RATE = 10;
-
-for (var i = -1; i < MAX_CLIENTS; i++) {
-	clients.push({id: -1, socket: null});
-}
-
-clients[0].id = 0;
-
-var updates = [];
-
-wss.on('connection', function connection(ws) {
-	var newId = -1;
-	for (var i = 0; i < clients.length; i++) {
-		if (i != SERVER_INDEX) {
-			if (clients[i].id == -1) {
-				newId = i;
-				break;
-			}
-		}
-	}
-
-	ws.id = newId;
-
-	clientIndices.push(ws.id);
-	clients[ws.id].id = ws.id;
-    clients[ws.id].isHost = clientIndices.length == 1;
-	clients[ws.id].socket = ws;
-
-    let send = [];
-    for (let cl of clients) {
-        if (cl.id > -1) {
-            send.push({id: cl.id, isHost: cl.isHost});
-        }
+class ServerClient extends Client {
+    constructor(ws, id, isHost) {
+        super(id, isHost);
+        this.ws = ws;
     }
 
-	updates.push({from: SERVER_INDEX, data: {name: "CONNECTED", isHost: clientIndices.length == 1, clients: send, id: ws.id}});
+    send(data) {
+        return this.ws.send(JSON.stringify(data));
+    }
+}
 
-	ws.on('message', function incoming(message) {
-		//console.log("got message "+message);
-		updates.push({from: ws.id, data: JSON.parse(message)});
-	});
+class Packet extends UpdateStream {
+    constructor(from, string) {
+        super();
 
-	ws.on('close', function (ws2) {
-		for (var i = 0; i < clientIndices.length; i++) {
-			var index = clientIndices[i];
-			if (clients[index].socket == ws) {
-				clients[index].id = -1;
-				clients[index].socket = null;
-				clientIndices.splice(i, 1);
-				break;
-			}
-		}
- 	});
-});
+        this.from = from;
+        this.string = string;
+    }
 
-setInterval(function() {
-	if (updates.length > 0) {
-		for (var i = 0; i < clientIndices.length; i++) {
-			var id = clientIndices[i];
-			var client = clients[id];
-			var us = [];
+    decode() {
+        this.updates = JSON.parse(this.string);
+    }
 
-			updates.forEach(function(update) {
-				if (update.from != id) {
-					us.push(update);
-				}
-			});
-			if (us.length > 0) {
-				var str = JSON.stringify(us);
-				client.socket.send(str);
-			}
-		}
-		updates = [];
-	}
-}, SEND_RATE);
+    json() {
+        return {from: this.from, data: this.string};
+    }
+
+    iterator() {
+        return new BasicIterator(this.updates, true);
+    }
+}
+
+function encode(from, object) {
+    return new Packet(from, JSON.stringify(object));
+}
+
+class ServerClientList extends ClientList {
+    constructor() {
+        super();
+    }
+
+    alloc(ws) {
+        return this.push(new ServerClient(ws));
+    }
+}
+
+class Server {
+    constructor(wss) {
+        this.wss = wss;
+        this.clients = new ServerClientList();
+
+        this.local = this.clients.push(new Client());
+
+        this.packets = [];
+        this.wss.on('connection', (ws) => {
+            let cl = this.clients.alloc(ws);
+
+            if (this.clients.length() == 2) {
+                this.clients.setHost(cl.id());
+            }
+
+            ws.id = cl.id();
+        	this.packets.push(encode(this.local.id(), {name: "CONNECTED", id: cl.id(), isHost: cl.host(), clients: this.clients.export()}));
+
+        	ws.on('message', (message) => {
+        		this.packets.push(new Packet(cl.id(), message));
+        	});
+
+        	ws.on('close', (ws2) => {
+        		this.clients.remove(cl.id());
+         	});
+        });
+    }
+
+    update() {
+        let hostClient = this.clients.host();
+
+
+        let it = this.clients.iterator();
+        let c = 0;
+        while (it.hasNext()) {
+            let client = it.next();
+            if (client != this.local) {
+                let clUpdates = [];
+                for (let i = 0; i < this.packets.length; i++) {
+                    let p = this.packets[i];
+
+                    if (p.from != client.id()) {
+                        clUpdates.push(p.json());
+                    }
+                }
+
+                if (clUpdates.length > 0) {
+                    console.log(client.id());
+                    client.send(clUpdates);
+                }
+            }
+        }
+
+        this.packets = [];
+    }
+
+    broadcastAllExcept(data, except) {
+        let it = this.clients.iterator();
+        while (it.hasNext()) {
+            let cl = it.remove();
+            if (cl != this.local && cl != except) {
+                cl.send(data);
+            }
+        }
+    }
+}
+
+const WebSocketServer = require('ws').Server;
+let wss = new WebSocketServer({ port: 8080 });
+
+const SERVER_INDEX = 0;
+const MAX_CLIENTS = 64;
+const SEND_RATE = 1000 / 60;
+
+function run() {
+    let timer = new Timer();
+    let server = new Server(wss);
+
+    setInterval(() => {
+        timer.update(() => {
+            server.update();
+        });
+    }, SEND_RATE);
+}
+
+run();
 
 console.log("Running server...");

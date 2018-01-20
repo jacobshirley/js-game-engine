@@ -1,6 +1,6 @@
 import Timer from "./timer.js";
 import Interval from "./interval.js";
-import LockstepQueueError from "../updates/lockstep-queue-error.js";
+import LockstepQueueError from "../updates/lockstep/lockstep-queue-error.js";
 import Delay from "./delay.js";
 
 export default class LockstepTimer extends Timer {
