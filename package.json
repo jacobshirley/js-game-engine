@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "environment.js",
   "scripts": {
-    "build-server": "browserify --node src/net/server/webserver.js  -o bundle.js -t [ babelify --presets [ es2015 ] ]",
+    "build-server": "babel src -d src-es5/ --presets env -w",
+    "run-server": "node src-es5/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
