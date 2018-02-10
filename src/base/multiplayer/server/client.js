@@ -1,4 +1,4 @@
-import {ClientUpdateStream} from "../client-stream.js";
+import {ClientUpdateStream} from "../../engine/updates/streamed/client-stream.js";
 
 export default class ServerClient extends ClientUpdateStream {
     constructor(ws, id, isHost) {
@@ -7,10 +7,6 @@ export default class ServerClient extends ClientUpdateStream {
     }
 
     send(data) {
-        try {
-            return this.ws.send(JSON.stringify(data));
-        } catch (e) {
-            
-        }
+        return this.ws.send(JSON.stringify(data));
     }
 }

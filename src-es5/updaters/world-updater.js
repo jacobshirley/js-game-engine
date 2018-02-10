@@ -40,20 +40,17 @@ var WorldUpdater = function (_DelegateUpdater) {
 	}, {
 		key: "process",
 		value: function process(update) {
-			if (update.name == "INIT") {
+			if (update.name == "CREATE_WORLD") {
+				this.world.reset(update.props);
+			} else if (update.name == "INIT") {
 				if (!this.pool.isHost) {
-					this.world.reset(update.props);
+					this.pool.push({ name: "INIT_WORLD" }, true);
 				}
-			} else if (update.name == "CONNECTED") {
-				if (!this.pool.isHost) {
-					this.pool.push({ name: "REQ" });
-				}
-			} else if (update.name == "REQ") {
+			} else if (update.name == "INIT_WORLD") {
 				if (this.pool.isHost) {
 					var p = this.world.physics.getAllObjectProps();
 
-					this.world.reset(p);
-					this.pool.pushFramed({ name: "INIT", props: p });
+					this.pool.pushFramed({ name: "CREATE_WORLD", props: p }, true);
 				}
 			}
 

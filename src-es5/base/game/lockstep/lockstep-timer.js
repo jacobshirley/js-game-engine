@@ -36,27 +36,31 @@ var LockstepTimer = function (_Timer) {
 	_inherits(LockstepTimer, _Timer);
 
 	function LockstepTimer(client, delay) {
-		var maxDelay = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 50;
-		var syncInterval = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 5;
+		var minDelay = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 5;
+		var maxDelay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 50;
+		var syncInterval = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 5;
 
 		_classCallCheck(this, LockstepTimer);
 
 		var _this = _possibleConstructorReturn(this, (LockstepTimer.__proto__ || Object.getPrototypeOf(LockstepTimer)).call(this));
 
+		_this.init = false;
 		_this.client = client;
 		_this.delay = delay;
+		_this.minDelay = minDelay;
 		_this.maxDelay = maxDelay;
 		_this.syncInterval = syncInterval;
+		_this._resetTick = 0;
 
-		var interval = new _interval2.default(syncInterval, true);
+		if (_this.client.isHost) {
+			var interval = new _interval2.default(syncInterval, true);
 
-		interval.on('complete', function () {
-			if (_this.client.isHost) {
-				_this.client.push({ name: "HOST_TICK", tick: _this.tick, time: _this.time });
-			}
-		});
+			interval.on('complete', function () {
+				_this.client.push({ name: "HOST_TICK", tick: _this.tick, time: _this.time }, true);
+			});
 
-		_this.addInterval(interval);
+			_this.addInterval(interval);
+		}
 		return _this;
 	}
 
@@ -67,7 +71,7 @@ var LockstepTimer = function (_Timer) {
 				return _get(LockstepTimer.prototype.__proto__ || Object.getPrototypeOf(LockstepTimer.prototype), "update", this).call(this, main);
 			} catch (e) {
 				if (e instanceof _lockstepQueueError2.default) {
-					console.log("Delaying");
+					console.log("LockstepError: Delaying");
 					this.addDelay(new _delay2.default(this.delay, true));
 				} else throw e;
 			}
@@ -75,13 +79,38 @@ var LockstepTimer = function (_Timer) {
 	}, {
 		key: "process",
 		value: function process(update) {
-			if (update.name == "HOST_TICK") {
-				if (update.tick - this.tick > this.maxDelay) {
-					this.tick = update.tick - 1;
-					this.time = update.time;
+			if (this.client.isHost) {
+				if (update.name == "CLIENT_ADDED") {
+					//console.log("client added");
+					this.client.push({ name: "INIT_TICK", tick: this.tick, time: this.time }, true);
+				}
 
+				return;
+			}
+
+			if (update.name == "HOST_TICK") {
+				if (!this.init) return;
+
+				var diff = update.tick - this.tick;
+
+				if (this._resetTick < update.tick && diff <= this.minDelay) {
+					//console.log("Delaying " + diff);
+
+					this._resetTick += this.delay;
 					this.addDelay(new _delay2.default(this.delay, true));
 				}
+			} else if (update.name == "INIT_TICK") {
+				if (this.init) return;
+
+				//console.log("init");
+
+				this.tick = update.tick - 1;
+				this.time = update.time;
+
+				this._resetTick = this.tick + this.delay;
+				this.addDelay(new _delay2.default(this.delay, true));
+
+				this.init = true;
 			}
 		}
 	}]);

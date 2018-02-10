@@ -29,7 +29,7 @@ export default class LockstepGame extends Game {
 
     _build() {
         this.queue = new LockstepUpdateQueue(this.multiplayer.getLocalClient(), this.multiplayer.getClients());
-        this.timer = new LockstepTimer(this.queue, 5);
+        this.timer = new LockstepTimer(this.queue, 5, 2, 50);
 
         this.controllers = new Controllers(this.queue);
 
@@ -64,7 +64,8 @@ export default class LockstepGame extends Game {
     getDebugString() {
         return "FPS: " + this.renderTimer.fps + "<br />" +
                "UPS: " + this.renderTimer.ups + "<br />" +
-               "Frame: " + this.timer.tick;
+               "Frame: " + this.timer.tick + "<br />" +
+               "Net Updates: " + this.queue.processedUpdates;
     }
 
     update() {
@@ -79,9 +80,7 @@ export default class LockstepGame extends Game {
         requestAnimationFrame(() => {
             this.update();
 
-            requestAnimationFrame(() => {
-                this.start();
-            });
+            this.start();
         });
     }
 }

@@ -12,7 +12,7 @@ var _multiplayer2 = _interopRequireDefault(_multiplayer);
 
 var _client = require("../../engine/updates/client.js");
 
-var _clientStream = require("../client-stream.js");
+var _clientStream = require("../../engine/updates/streamed/client-stream.js");
 
 var _iteration = require("../../engine/updates/iteration.js");
 
@@ -45,7 +45,6 @@ var ServerConnection = function (_Multiplayer) {
 		var _this = _possibleConstructorReturn(this, (_ref = ServerConnection.__proto__ || Object.getPrototypeOf(ServerConnection)).call.apply(_ref, [this].concat(args)));
 
 		_this.local = null;
-		_this.clients = new _client.ClientList();
 		//this.clients.push(new ClientUpdateStream(0, true));
 
 		_this.connection = connection;
@@ -65,13 +64,11 @@ var ServerConnection = function (_Multiplayer) {
 				}
 
 				var client = _this.clients.get(updates.from);
-				//console.log("from: "+this.clients.get(updates.from));
 				if (!client) {
-					//console.log("create");
 					client = _this.clients.push(new _clientStream.ClientUpdateStream(updates.from));
 				}
 
-				client._cachedUpdates = client._cachedUpdates.concat(data2);
+				client.cache(data2);
 			}
 		});
 		return _this;
@@ -90,7 +87,9 @@ var ServerConnection = function (_Multiplayer) {
 	}, {
 		key: "flush",
 		value: function flush() {
-			var updates = this.localUpdates;
+			var updates = this.local.toBeSent;
+
+			//console.log(this.local);
 
 			if (updates.length > 0) {
 				this.connection.send(updates.splice(0));
@@ -101,9 +100,13 @@ var ServerConnection = function (_Multiplayer) {
 	}, {
 		key: "update",
 		value: function update(frame) {
+			this.recv();
+
 			while (this.serverUpdates.length > 0) {
 				this.process(this.serverUpdates.shift());
 			}
+
+			if (this.connected) this.local.update(frame);
 		}
 	}, {
 		key: "process",
@@ -112,11 +115,15 @@ var ServerConnection = function (_Multiplayer) {
 				this.local = this.clients.push(new _clientStream.LocalClientUpdateStream(this.connection, update.id, update.isHost));
 				this.connected = true;
 
+				this.local.push({ name: "INIT" }, false);
+
 				this.emit("connected", this.local);
 			} else if (update.name == "CLIENT_ADDED") {
-				var nC = this.clients.push(new _clientStream.ClientUpdateStream(update.id, update.isHost));
+				if (update.id != this.local.id()) {
+					var nC = this.clients.push(new _clientStream.ClientUpdateStream(update.id, update.isHost));
 
-				this.emit("client-added", nC);
+					this.emit("client-added", nC);
+				}
 			} else if (update.name == "CLIENTS_LIST") {
 				var _iteratorNormalCompletion = true;
 				var _didIteratorError = false;
@@ -127,9 +134,7 @@ var ServerConnection = function (_Multiplayer) {
 						var cl = _step.value;
 
 						if (this.local.id() != cl.id) {
-							//console.log(cl.id + ", " + this.clients.has(cl.id));
 							var cl2 = this.clients.push(new _clientStream.ClientUpdateStream(cl.id, cl.isHost));
-							//console.log(this.clients.length());
 							this.emit("client-added", cl2);
 						}
 					}
@@ -148,32 +153,14 @@ var ServerConnection = function (_Multiplayer) {
 					}
 				}
 			} else if (update.name == "CLIENT_REMOVED") {
-				var _iteratorNormalCompletion2 = true;
-				var _didIteratorError2 = false;
-				var _iteratorError2 = undefined;
+				var id = update.id;
 
-				try {
-					for (var _iterator2 = update.clients[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-						var id = _step2.value;
+				/*let cl = this.clients.get(id);
+    if (cl.toBeRead > 0) {
+    	this.clients.remove(id);
+    }*/
 
-						this.clients.remove(id);
-
-						this.emit("client-removed", id);
-					}
-				} catch (err) {
-					_didIteratorError2 = true;
-					_iteratorError2 = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion2 && _iterator2.return) {
-							_iterator2.return();
-						}
-					} finally {
-						if (_didIteratorError2) {
-							throw _iteratorError2;
-						}
-					}
-				}
+				this.emit("client-removed", id);
 			} else if (update.name == "SET_HOST") {
 				this.clients.setHost(update.id);
 

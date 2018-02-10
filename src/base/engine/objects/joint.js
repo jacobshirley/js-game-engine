@@ -2,7 +2,7 @@ import Object from "./object.js"
 
 export default class Joint extends Object {
     constructor(props) {
-
+        super(props);
     }
 
     renderable() {

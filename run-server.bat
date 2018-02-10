@@ -1,1 +1,1 @@
-node src/net/server/webserver
+npm run run-server

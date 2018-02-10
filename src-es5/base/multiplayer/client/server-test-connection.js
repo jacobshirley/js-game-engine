@@ -12,7 +12,7 @@ var _multiplayer2 = _interopRequireDefault(_multiplayer);
 
 var _client = require("../../engine/updates/client.js");
 
-var _clientStream = require("../client-stream.js");
+var _clientStream = require("../../engine/updates/streamed/client-stream.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -31,7 +31,8 @@ var ServerTestConnection = function (_Multiplayer) {
         var _this = _possibleConstructorReturn(this, (ServerTestConnection.__proto__ || Object.getPrototypeOf(ServerTestConnection)).call(this));
 
         _this.local = new _clientStream.LocalClientUpdateStream(null, 0, true);
-        _this.clients = new _client.ClientList();
+        _this.local.push({ name: "INIT" }, false);
+
         _this.clients.push(_this.local);
         _this.clients.setHost(0);
 
@@ -55,7 +56,9 @@ var ServerTestConnection = function (_Multiplayer) {
         value: function flush() {}
     }, {
         key: "update",
-        value: function update(frame) {}
+        value: function update(frame) {
+            this.local.update(frame);
+        }
     }]);
 
     return ServerTestConnection;

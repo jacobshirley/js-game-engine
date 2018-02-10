@@ -61,7 +61,7 @@ var Picker = function () {
 						var i = _this.physics.objects.indexOf(body);
 
 						var event = { name: "CREATE", index: i, data: { x: pos.x, y: pos.y, z: pos.z } };
-						_this.queue.pushFramed(event);
+						_this.queue.pushFramed(event, true);
 					}
 				}
 			}
@@ -72,7 +72,7 @@ var Picker = function () {
 				ct.userData.selected = null;
 
 				var event = { name: "DESTROY" };
-				_this.queue.pushFramed(event);
+				_this.queue.pushFramed(event, true);
 
 				ct.userData.draggingPlane = new THREE.Plane();
 				_this.renderer.orbitControls.enableRotate = true;
@@ -111,7 +111,7 @@ var Picker = function () {
       return;*/
 					} else {
 						var event = { name: "MOVE", data: { x: intersection.x, y: intersection.y, z: intersection.z } };
-						_this.queue.pushFramed(event);
+						_this.queue.pushFramed(event, true);
 					}
 				}
 			}

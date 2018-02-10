@@ -16,10 +16,6 @@ var _renderer = require("./base/engine/rendering/renderer.js");
 
 var _renderer2 = _interopRequireDefault(_renderer);
 
-var _controller = require("./base/controller/controller.js");
-
-var _controller2 = _interopRequireDefault(_controller);
-
 var _dominos = require("./dominos.js");
 
 var _dominos2 = _interopRequireDefault(_dominos);
@@ -36,11 +32,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var SERVER_INDEX = 0;
 var MAX_CLIENTS = 64;
-var SEND_RATE = 1000 / 60;
+var REFRESH_RATE = 1000 / 128;
 
 function run() {
-    var timer = new _timer2.default();
-    var server = new _gameServer2.default(8080);
+    var server = new _gameServer2.default(8080, MAX_CLIENTS);
 
     var config = { multiplayer: server,
         renderer: new _renderer2.default(),
@@ -50,10 +45,9 @@ function run() {
     var game = new _dominos2.default(config);
 
     setInterval(function () {
-        timer.update(function () {
-            game.update();
-        });
-    }, SEND_RATE);
+        game.update();
+        //console.log(game.getDebugString());
+    }, REFRESH_RATE);
 }
 
 run();

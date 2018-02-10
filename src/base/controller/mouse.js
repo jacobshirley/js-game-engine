@@ -1,7 +1,7 @@
 import EventEmitter from "../shims/events.js";
 
 export default class MouseController extends EventEmitter {
-    constructor(id) {
+    constructor(id, networked) {
         super();
 
         this.id = id;
@@ -13,6 +13,7 @@ export default class MouseController extends EventEmitter {
         this.realY = 0;
         this.realMouseDown = false;
 
+        this.networked = networked;
         this.userData = {};
     }
 
@@ -26,7 +27,7 @@ export default class MouseController extends EventEmitter {
            this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
            this.realMouseDown = true;
 
-           this.queue.pushFramed({name: "MOUSE_DOWN", mouseDown: this.realMouseDown, x: this.realX, y: this.realY});
+           this.queue.pushFramed({name: "MOUSE_DOWN", mouseDown: this.realMouseDown, x: this.realX, y: this.realY}, this.networked);
        });
 
        $(window).mouseup((event) => {
@@ -36,7 +37,7 @@ export default class MouseController extends EventEmitter {
            this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
            this.realMouseDown = false;
 
-           this.queue.pushFramed({name: "MOUSE_UP", mouseDown: this.realMouseDown, x: this.realX, y: this.realY});
+           this.queue.pushFramed({name: "MOUSE_UP", mouseDown: this.realMouseDown, x: this.realX, y: this.realY}, this.networked);
        });
 
        $(window).mousemove((event) => {
@@ -45,7 +46,7 @@ export default class MouseController extends EventEmitter {
            this.realX = (event.clientX / window.innerWidth) * 2 - 1;
            this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
 
-           this.queue.pushFramed({name: "MOUSE_MOVE", x: this.realX, y: this.realY});
+           this.queue.pushFramed({name: "MOUSE_MOVE", x: this.realX, y: this.realY}, this.networked);
        });
 
        this.queue.addProcessor(this);

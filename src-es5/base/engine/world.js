@@ -173,7 +173,7 @@ var World = function () {
     }, {
         key: "getDebugString",
         value: function getDebugString() {
-            return "<br />Net updates: " + this.updatePool.processedUpdates + " <br />Controller updates: " + this.controllers.updates;
+            return "<br />Net updates: " + this.queue.processedUpdates;
         }
     }]);
 

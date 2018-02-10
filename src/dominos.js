@@ -84,6 +84,11 @@ export default class Dominos extends LockstepGame {
         }
     }
 
+    getDebugString() {
+        return super.getDebugString() + "<br />" +
+               "Picker updates: " + this.ph.us;
+    }
+
     init() {
         if (!this.config.headless) {
             this.renderer.init();
@@ -96,13 +101,15 @@ export default class Dominos extends LockstepGame {
         this.world = new World(this, this.renderer, this.physics);
 
         if (!this.config.headless) {
-            let mouse = new MouseController(0);
+            let mouse = new MouseController(0, false);
             this.controllers.add(mouse);
-            this.picker = new Picker(this.renderer, this.physics, mouse, this.queue);
+            this.picker = new Picker(this.renderer, this.physics, mouse, this.multiplayer.getLocalClient());
         }
 
         let physicsUpdater = new PickingPhysicsUpdater(this.queue, this.physics);
         this.queue.addProcessor(new WorldUpdater(this.queue, physicsUpdater, this.world));
+
+        this.ph = physicsUpdater;
 
         this.createObjects();
     }

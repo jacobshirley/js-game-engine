@@ -34,8 +34,8 @@ var GameTimer = function (_RenderTimer) {
 
 		var _this = _possibleConstructorReturn(this, (GameTimer.__proto__ || Object.getPrototypeOf(GameTimer)).call(this));
 
-		_this.renderFunc = renderFunc;
-		_this.logicFunc = logicFunc;
+		_this.renderFunc = renderFunc || function () {};
+		_this.logicFunc = logicFunc || function () {};
 
 		_this.updateInterval = DEFAULT_UPDATE_RATE;
 		_this.updateTimer = timer || new _timer2.default();

@@ -39,34 +39,17 @@ var StreamUpdateQueue = function (_UpdateQueue) {
 
 	_createClass(StreamUpdateQueue, [{
 		key: "push",
-		value: function push(update) {
-			this.local.push(update);
+		value: function push(update, networked) {
+			this.local.push(update, networked);
 		}
 	}, {
 		key: "pushFramed",
-		value: function pushFramed(update) {
-			this.toBeFramed.push(update);
-		}
-	}, {
-		key: "recv",
-		value: function recv() {
-			var clients = this.clients.iterator();
-
-			while (clients.hasNext()) {
-				clients.remove().recv();
-			}
+		value: function pushFramed(update, networked) {
+			this.local.pushFramed(update, networked);
 		}
 	}, {
 		key: "update",
-		value: function update(frame) {
-			var it = new _iteration2.default(this.toBeFramed, false);
-			while (it.hasNext()) {
-				var u = it.remove();
-				u.frame = frame;
-				this.local.push(u);
-			}
-			this.recv();
-		}
+		value: function update(frame) {}
 	}, {
 		key: "isHost",
 		get: function get() {

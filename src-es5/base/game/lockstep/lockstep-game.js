@@ -67,7 +67,7 @@ var LockstepGame = function (_Game) {
             var _this2 = this;
 
             this.queue = new _lockstepQueue2.default(this.multiplayer.getLocalClient(), this.multiplayer.getClients());
-            this.timer = new _lockstepTimer2.default(this.queue, 5);
+            this.timer = new _lockstepTimer2.default(this.queue, 5, 2, 50);
 
             this.controllers = new _controllers2.default(this.queue);
 
@@ -101,7 +101,7 @@ var LockstepGame = function (_Game) {
     }, {
         key: "getDebugString",
         value: function getDebugString() {
-            return "FPS: " + this.renderTimer.fps + "<br />" + "UPS: " + this.renderTimer.ups + "<br />" + "Frame: " + this.timer.tick;
+            return "FPS: " + this.renderTimer.fps + "<br />" + "UPS: " + this.renderTimer.ups + "<br />" + "Frame: " + this.timer.tick + "<br />" + "Net Updates: " + this.queue.processedUpdates;
         }
     }, {
         key: "update",
@@ -120,9 +120,7 @@ var LockstepGame = function (_Game) {
             requestAnimationFrame(function () {
                 _this3.update();
 
-                requestAnimationFrame(function () {
-                    _this3.start();
-                });
+                _this3.start();
             });
         }
     }], [{

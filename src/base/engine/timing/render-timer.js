@@ -29,11 +29,11 @@ class MaxFrameDelay extends Delay {
 		return false;
 	}
 
-	start() {
+	start(counter) {
 		this.then = counter.time;
 	}
 
-	complete() {
+	complete(counter) {
 		let now = counter.time;
 		let delta = now - this.then;
 

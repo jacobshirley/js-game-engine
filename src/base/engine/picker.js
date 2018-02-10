@@ -47,7 +47,7 @@ export default class Picker {
 		                let i = this.physics.objects.indexOf(body);
 
 		               	let event = {name: "CREATE", index: i, data: {x: pos.x, y: pos.y, z: pos.z}};
-		                this.queue.pushFramed(event);
+		                this.queue.pushFramed(event, true);
 	                }
 	            }
 	        }
@@ -58,7 +58,7 @@ export default class Picker {
 				ct.userData.selected = null;
 
 	        	let event = {name: "DESTROY"};
-	            this.queue.pushFramed(event);
+	            this.queue.pushFramed(event, true);
 
 				ct.userData.draggingPlane = new THREE.Plane();
 				this.renderer.orbitControls.enableRotate = true;
@@ -97,7 +97,7 @@ export default class Picker {
 	                    return;*/
 	                } else {
 						let event = {name: "MOVE", data: {x: intersection.x, y: intersection.y, z: intersection.z}};
-		                this.queue.pushFramed(event);
+		                this.queue.pushFramed(event, true);
 	                }
 	            }
 	        }

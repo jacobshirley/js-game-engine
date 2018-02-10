@@ -21,7 +21,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var MouseController = function (_EventEmitter) {
     _inherits(MouseController, _EventEmitter);
 
-    function MouseController(id) {
+    function MouseController(id, networked) {
         _classCallCheck(this, MouseController);
 
         var _this = _possibleConstructorReturn(this, (MouseController.__proto__ || Object.getPrototypeOf(MouseController)).call(this));
@@ -35,6 +35,7 @@ var MouseController = function (_EventEmitter) {
         _this.realY = 0;
         _this.realMouseDown = false;
 
+        _this.networked = networked;
         _this.userData = {};
         return _this;
     }
@@ -53,7 +54,7 @@ var MouseController = function (_EventEmitter) {
                 _this2.realY = -(event.clientY / window.innerHeight) * 2 + 1;
                 _this2.realMouseDown = true;
 
-                _this2.queue.pushFramed({ name: "MOUSE_DOWN", mouseDown: _this2.realMouseDown, x: _this2.realX, y: _this2.realY });
+                _this2.queue.pushFramed({ name: "MOUSE_DOWN", mouseDown: _this2.realMouseDown, x: _this2.realX, y: _this2.realY }, _this2.networked);
             });
 
             $(window).mouseup(function (event) {
@@ -63,7 +64,7 @@ var MouseController = function (_EventEmitter) {
                 _this2.realY = -(event.clientY / window.innerHeight) * 2 + 1;
                 _this2.realMouseDown = false;
 
-                _this2.queue.pushFramed({ name: "MOUSE_UP", mouseDown: _this2.realMouseDown, x: _this2.realX, y: _this2.realY });
+                _this2.queue.pushFramed({ name: "MOUSE_UP", mouseDown: _this2.realMouseDown, x: _this2.realX, y: _this2.realY }, _this2.networked);
             });
 
             $(window).mousemove(function (event) {
@@ -72,7 +73,7 @@ var MouseController = function (_EventEmitter) {
                 _this2.realX = event.clientX / window.innerWidth * 2 - 1;
                 _this2.realY = -(event.clientY / window.innerHeight) * 2 + 1;
 
-                _this2.queue.pushFramed({ name: "MOUSE_MOVE", x: _this2.realX, y: _this2.realY });
+                _this2.queue.pushFramed({ name: "MOUSE_MOVE", x: _this2.realX, y: _this2.realY }, _this2.networked);
             });
 
             this.queue.addProcessor(this);

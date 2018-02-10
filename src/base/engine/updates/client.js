@@ -44,12 +44,22 @@ export class ClientList {
         return this.arr[this.arrIds.indexOf(id)];
     }
 
+	_newId() {
+		for (let i = 0; i < this.length(); i++) {
+			if (!this.has(i)) {
+				return i;
+			}
+		}
+
+		return this.arr.length;
+	}
+
 	push(client) {
 		let id = client.id();
 		let isSet = !(typeof id === 'undefined');
 
 		if (!isSet || id == -1) {
-			id = this.arr.length;
+			id = this._newId();
 		}
 
 		if (isSet && id != -1 && this.has(id)) {
@@ -72,15 +82,16 @@ export class ClientList {
 	}
 
 	set(client) {
-		this.arr[this.arrIds.indexOf(client.id())] = client;
+		let index = this.arrIds.indexOf(client.id());
+		this.arr[index] = client;
 		return client;
 	}
 
     remove(id) {
         let i = this.arrIds.indexOf(id);
         if (i != -1) {
-            this.arr.splice(id, 1);
-            this.arrIds.splice(id, 1);
+			this.arr.splice(i, 1);
+            this.arrIds.splice(i, 1);
         }
     }
 

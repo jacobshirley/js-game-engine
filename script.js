@@ -6,10 +6,10 @@ import Dominos from "./src/dominos.js";
 
 function main() {
     var connection = new TestConnection(50, 0);
-    //connection = new WebSocketConnection("ws://127.0.0.1:8080/");
+    connection = new WebSocketConnection("ws://127.0.0.1:8080/");
 
     const config = {
-        multiplayer: new ServerTestConnection(),
+        multiplayer: new ServerConnection(connection),
         renderer: new ThreeRenderer(document.body)
     };
 

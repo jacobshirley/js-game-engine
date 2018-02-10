@@ -14,7 +14,7 @@ var _events2 = _interopRequireDefault(_events);
 
 var _client = require("../../engine/updates/client.js");
 
-var _clientStream = require("../client-stream.js");
+var _clientStream = require("../../engine/updates/streamed/client-stream.js");
 
 var _packet = require("./packet.js");
 
@@ -49,10 +49,7 @@ var GameServer = function (_Multiplayer) {
         var _this = _possibleConstructorReturn(this, (GameServer.__proto__ || Object.getPrototypeOf(GameServer)).call(this));
 
         _this.wss = new _ws.Server({ port: port });
-
-        _this.clients = new _client.ClientList();
         _this.local = _this.clients.push(new _clientStream.LocalClientUpdateStream());
-
         _this.clients.setHost(_this.local.id());
 
         _this.packets = [];
@@ -64,22 +61,27 @@ var GameServer = function (_Multiplayer) {
                 this.clients.setHost(cl.id());
             }*/
 
+            console.log("Added client " + cl.id());
             ws.id = cl.id();
 
             local.push({ name: "CONNECTED", id: cl.id(), isHost: cl.host() });
             local.push({ name: "CLIENTS_LIST", list: _this.clients.export() });
+            local.push({ name: "SET_HOST", id: _this.clients.hostId });
 
             cl.send([encode(_this.local.id(), local).json()]);
 
+            _this.local.push({ name: "CLIENT_ADDED", id: cl.id(), isHost: cl.host() });
             _this.packets.push(encode(_this.local.id(), [{ name: "CLIENT_ADDED", id: cl.id(), isHost: cl.host() }]));
 
             ws.on('message', function (message) {
-                cl._cachedUpdates = cl._cachedUpdates.concat(JSON.parse(message));
+                cl.cache(JSON.parse(message));
                 _this.packets.push(new _packet2.default(cl.id(), message));
             });
 
             ws.on('close', function (ws2) {
-                _this.clients.remove(cl.id());
+                //console.log("attempting to remove");
+
+                _this.packets.push(encode(_this.local.id(), [{ name: "CLIENT_REMOVED", id: cl.id() }]));
             });
         });
 
@@ -100,7 +102,10 @@ var GameServer = function (_Multiplayer) {
         }
     }, {
         key: "update",
-        value: function update() {}
+        value: function update(frame) {
+            this.recv();
+            this.local.update(frame);
+        }
     }, {
         key: "flush",
         value: function flush() {
@@ -108,7 +113,7 @@ var GameServer = function (_Multiplayer) {
             var it = this.clients.iterator();
             var c = 0;
 
-            var localUpdatePacket = encode(this.local.id(), this.local.localUpdates.splice(0)).json();
+            var localUpdatePacket = encode(this.local.id(), this.local.toBeSent.splice(0)).json();
 
             while (it.hasNext()) {
                 var client = it.next();
@@ -125,9 +130,18 @@ var GameServer = function (_Multiplayer) {
                     }
 
                     if (clUpdates.length > 0) {
-                        client.send(clUpdates);
+                        try {
+                            client.send(clUpdates);
+                        } catch (e) {
+                            //console.log(client.id()+", " + c+", "+this.clients.length());
+                            this.clients.remove(client.id());
+                            //console.log(client.id()+", " + c+", "+this.clients.length());
+                            //console.log(e.message);
+                        }
                     }
                 }
+
+                c++;
             }
 
             this.packets = [];

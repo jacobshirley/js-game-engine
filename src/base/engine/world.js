@@ -79,6 +79,6 @@ export default class World {
     }
 
     getDebugString() {
-        return "<br />Net updates: " + this.updatePool.processedUpdates + " <br />Controller updates: " + this.controllers.updates;
+        return "<br />Net updates: " + this.queue.processedUpdates;
     }
 }

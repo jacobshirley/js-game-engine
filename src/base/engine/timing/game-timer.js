@@ -7,8 +7,8 @@ export default class GameTimer extends RenderTimer {
 	constructor(timer, renderFunc, logicFunc) {
 		super();
 
-		this.renderFunc = renderFunc;
-		this.logicFunc = logicFunc;
+		this.renderFunc = renderFunc || (() => {});
+		this.logicFunc = logicFunc || (() => {});
 
         this.updateInterval = DEFAULT_UPDATE_RATE;
         this.updateTimer = timer || new Timer();

@@ -10,6 +10,8 @@ var _events = require("../shims/events.js");
 
 var _events2 = _interopRequireDefault(_events);
 
+var _client = require("../engine/updates/client.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -26,14 +28,31 @@ var Multiplayer = function (_EventEmitter) {
 
         var _this = _possibleConstructorReturn(this, (Multiplayer.__proto__ || Object.getPrototypeOf(Multiplayer)).call(this));
 
+        _this.clients = new _client.ClientList();
+
         _this.localUpdates = [];
+        _this.queueR = [];
         return _this;
     }
 
     _createClass(Multiplayer, [{
         key: "push",
         value: function push(update) {
-            this.localUpdates.push(update);
+            //this.localUpdates.push(update);
+        }
+    }, {
+        key: "recv",
+        value: function recv() {
+            var clients = this.clients.iterator();
+
+            while (clients.hasNext()) {
+                clients.remove().recv();
+            }
+        }
+    }, {
+        key: "queueRemove",
+        value: function queueRemove(client) {
+            this.queueR.push(client);
         }
     }, {
         key: "getLocalClient",

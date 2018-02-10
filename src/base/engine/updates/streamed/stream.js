@@ -1,4 +1,4 @@
-import BasicIterator from "./iteration.js";
+import BasicIterator from "../iteration.js";
 
 export default class UpdateStream {
 	constructor(updates) {
