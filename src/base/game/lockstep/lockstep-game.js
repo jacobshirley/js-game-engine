@@ -21,15 +21,27 @@ export default class LockstepGame extends Game {
                 this._build();
             });
         }
+
+        this.tabActive = true;
+
+		if (typeof window !== 'undefined') {
+			$(window).focus(() => {
+			    this.tabActive = true;
+			});
+
+			$(window).blur(() => {
+			    this.tabActive = false;
+			});
+		}
     }
 
-    static get isServer() {
-        return this.multiplayer.local.isHost;
+    get isServer() {
+        return this.multiplayer.getLocalClient().host();
     }
 
     _build() {
         this.queue = new LockstepUpdateQueue(this.multiplayer.getLocalClient(), this.multiplayer.getClients());
-        this.timer = new LockstepTimer(this.queue, 5, 2, 50);
+        this.timer = new LockstepTimer(this.queue, 3, 2, 50);
 
         this.controllers = new Controllers(this.queue);
 
@@ -51,6 +63,12 @@ export default class LockstepGame extends Game {
             this.logic(frame);
         });
 
+        if (typeof this.config.maxFPS !== 'undefined')
+            this.renderTimer.setMaxFrames(this.config.maxFPS);
+
+        if (typeof this.config.updatesPerSecond !== 'undefined')
+            this.renderTimer.setUpdateRate(this.config.updatesPerSecond);
+
         const sendInterval = new Interval(2, true);
         sendInterval.on('complete', () => {
             this.multiplayer.flush();
@@ -65,7 +83,7 @@ export default class LockstepGame extends Game {
         return "FPS: " + this.renderTimer.fps + "<br />" +
                "UPS: " + this.renderTimer.ups + "<br />" +
                "Frame: " + this.timer.tick + "<br />" +
-               "Net Updates: " + this.queue.processedUpdates;
+               "Net updates: " + this.queue.processedUpdates;
     }
 
     update() {
@@ -77,10 +95,22 @@ export default class LockstepGame extends Game {
     }
 
     start() {
+        if (typeof window !== 'undefined') {
+            setInterval(() => {
+                if (document.visibilityState == "hidden") {
+                    this.update();
+                }
+            }, 1000 / 128);
+
+            this._start();
+        }
+    }
+
+    _start() {
         requestAnimationFrame(() => {
             this.update();
 
-            this.start();
+            this._start();
         });
     }
 }

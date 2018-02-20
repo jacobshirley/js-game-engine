@@ -1,7 +1,5 @@
 export default class Game {
-    constructor() {
-
-    }
+    constructor() {}
 
     init() {}
 

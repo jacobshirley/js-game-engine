@@ -1,7 +1,5 @@
 import Timer from "./base/engine/timing/timer.js";
-import UpdateStream from "./base/engine/updates/stream.js";
-import BasicIterator from "./base/engine/updates/iteration.js";
-import Renderer from "./base/engine/rendering/renderer.js";
+import Renderer from "./base/engine/world/rendering/renderer.js";
 import Dominos from "./dominos.js";
 import EventEmitter from "./base/shims/events.js";
 

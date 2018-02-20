@@ -1,10 +1,8 @@
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
-    value: true
+  value: true
 });
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _multiplayer = require("../multiplayer.js");
 
@@ -16,52 +14,33 @@ var _clientStream = require("../../engine/updates/streamed/client-stream.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+class ServerTestConnection extends _multiplayer2.default {
+  constructor() {
+    super();
+    this.local = new _clientStream.LocalClientUpdateStream(null, 0, true);
+    this.local.push({
+      name: "INIT"
+    }, false);
+    this.clients.push(this.local);
+    this.clients.setHost(0);
+    this.connected = true;
+    this.emit("connected", this.local);
+  }
 
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+  getLocalClient() {
+    return this.local;
+  }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+  getClients() {
+    return this.clients;
+  }
 
-var ServerTestConnection = function (_Multiplayer) {
-    _inherits(ServerTestConnection, _Multiplayer);
+  flush() {}
 
-    function ServerTestConnection() {
-        _classCallCheck(this, ServerTestConnection);
+  update(frame) {
+    this.local.update(frame);
+  }
 
-        var _this = _possibleConstructorReturn(this, (ServerTestConnection.__proto__ || Object.getPrototypeOf(ServerTestConnection)).call(this));
-
-        _this.local = new _clientStream.LocalClientUpdateStream(null, 0, true);
-        _this.local.push({ name: "INIT" }, false);
-
-        _this.clients.push(_this.local);
-        _this.clients.setHost(0);
-
-        _this.connected = true;
-        _this.emit("connected", _this.local);
-        return _this;
-    }
-
-    _createClass(ServerTestConnection, [{
-        key: "getLocalClient",
-        value: function getLocalClient() {
-            return this.local;
-        }
-    }, {
-        key: "getClients",
-        value: function getClients() {
-            return this.clients;
-        }
-    }, {
-        key: "flush",
-        value: function flush() {}
-    }, {
-        key: "update",
-        value: function update(frame) {
-            this.local.update(frame);
-        }
-    }]);
-
-    return ServerTestConnection;
-}(_multiplayer2.default);
+}
 
 exports.default = ServerTestConnection;

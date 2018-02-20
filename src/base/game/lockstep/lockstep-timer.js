@@ -58,12 +58,17 @@ export default class LockstepTimer extends Timer {
 
 				this._resetTick += this.delay;
 				this.addDelay(new Delay(this.delay, true));
+			} else if (diff > this.maxDelay) {
+				/*this.tick = update.tick - 30;
+				this.time = update.time;
+
+				this.client.push({name: "RESET_CLOCK"}, false);*/
+
+				
 			}
 		} else if (update.name == "INIT_TICK") {
 			if (this.init)
 				return;
-
-			//console.log("init");
 
 			this.tick = update.tick - 1;
 			this.time = update.time;

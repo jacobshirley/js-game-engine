@@ -34,7 +34,6 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 
 			u.__clId = stream.id();
 			if (u.frame == frame) {
-
 				it.remove();
 
 				if (u.name == "APPLY") {
@@ -53,19 +52,6 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 				it.remove();
 			} else if (!u.frame) {
 				it.remove();
-
-				/*if (!this.isHost && u.name == "HOST_TICK") {
-					let diff = u.tick - frame;
-					if (diff < LATENCY) {
-						console.log(u);
-						console.log(diff+", "+u.tick+", "+frame);
-						//this.updates.push(u);
-						console.log("LATENCY ERROR");
-						throw new LockstepQueueError(diff);
-					} else {
-						//this.updates.push(u);
-					}
-				}*/
 
 				this.updates.push(u);
 			}

@@ -1,5 +1,5 @@
 import BasicIterator from "../../engine/updates/iteration.js";
-import UpdateStream from "../../engine/updates/stream.js";
+import UpdateStream from "../../engine/updates/streamed/stream.js";
 
 export default class Packet extends UpdateStream {
     constructor(from, string) {

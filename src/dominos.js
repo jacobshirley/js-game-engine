@@ -1,14 +1,13 @@
-import Physics from "./base/engine/physics/ammo/physics.js";
-import Block from "./base/engine/objects/block.js";
+import Physics from "./base/engine/world/physics/ammo/physics.js";
+import Block from "./base/engine/world/objects/block.js";
 
-import PickingPhysicsUpdater from "./updaters/picking-physics-updater.js";
-import WorldUpdater from "./updaters/world-updater.js";
+import PickingPhysicsUpdater from "./base/engine/world/picker/picking-physics-updater.js";
+import WorldUpdater from "./base/engine/world/world-updater.js";
 
-import ObjectSynchronizer from "./base/engine/sync/object-synchronizer.js";
 import LockstepGame from "./base/game/lockstep/lockstep-game.js";
 
-import World from "./base/engine/world.js";
-import Picker from "./base/engine/picker.js";
+import World from "./base/engine/world/world.js";
+import Picker from "./base/engine/world/picker/picker.js";
 
 import MouseController from "./base/controller/mouse.js";
 
@@ -23,6 +22,7 @@ export default class Dominos extends LockstepGame {
         super(config);
 
         this.renderer = config.renderer;
+        this.inited = false;
     }
 
     initRenderer() {
@@ -69,7 +69,7 @@ export default class Dominos extends LockstepGame {
             var height = mod * 0.30;
 
             var props = {size: {width: 1 / 3, height: 1, length: 0.15},
-                        color: 0xFFFF00, mass:1};
+                        color: 0x00FF00, mass:1};
 
             if (mod % 2 == 1) {
                 props.position = {x: -w + ((i % 3) * w), y: 0.15 + height, z: w};
@@ -85,8 +85,7 @@ export default class Dominos extends LockstepGame {
     }
 
     getDebugString() {
-        return super.getDebugString() + "<br />" +
-               "Picker updates: " + this.ph.us;
+        return super.getDebugString() + "<br />";
     }
 
     init() {
@@ -103,22 +102,50 @@ export default class Dominos extends LockstepGame {
         if (!this.config.headless) {
             let mouse = new MouseController(0, false);
             this.controllers.add(mouse);
-            this.picker = new Picker(this.renderer, this.physics, mouse, this.multiplayer.getLocalClient());
+
+            this.picker = new Picker(this.renderer, this.physics, mouse, this.queue);
+        } else {
+            this.queue.addProcessor(new PickingPhysicsUpdater(this.queue, this.physics));
         }
 
-        let physicsUpdater = new PickingPhysicsUpdater(this.queue, this.physics);
-        this.queue.addProcessor(new WorldUpdater(this.queue, physicsUpdater, this.world));
+        //this.queue.addProcessor(new WorldUpdater(this.queue, this.world));
+        this.queue.addProcessor(this);
 
-        this.ph = physicsUpdater;
-
-        this.createObjects();
+        if (this.isServer) {
+            this.createObjects();
+        }
     }
+
+    process(update) {
+		if (update.name == "CREATE_WORLD") {
+            if (!this.isServer && !this.inited) {
+                this.inited = true;
+                this.createObjects();
+            }
+
+            console.log("reset");
+
+			this.world.reset(update.props);
+		} else if (update.name == "INIT" || update.name == "RESET_CLOCK") {
+			if (!this.queue.isHost) {
+                console.log("clock reset");
+                this.multiplayer.clear();
+				this.queue.push({name: "INIT_WORLD"}, true);
+			}
+		} else if (update.name == "INIT_WORLD") {
+			if (this.queue.isHost) {
+				let props = this.world.physics.getAllObjectProps();
+
+				this.queue.pushFramed({name: "CREATE_WORLD", props}, true);
+			}
+		}
+	}
 
     logic(frame) {
         if (!this.config.headless)
             this.picker.update(frame);
 
-        this.world.logic(frame);
+        this.world.update(frame);
     }
 
     render() {

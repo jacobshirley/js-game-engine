@@ -1,0 +1,3 @@
+object synchronizer -> on client init -> host send objects
+		 			-> on host create object -> send to client
+					

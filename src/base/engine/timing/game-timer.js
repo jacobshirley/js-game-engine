@@ -41,7 +41,7 @@ export default class GameTimer extends RenderTimer {
 	update() {
 		let t = 0;
 
-		while (this.updateTime >= this.updateInterval && t < 20) { // < 7 so it can catch up and doesn't go crazy
+		while (this.updateTime >= this.updateInterval && t < 65) { // < 65 so it can catch up and doesn't go crazy
 			if (!this.updateTimer.update(() => {
 				this.logicFunc(this.updateTimer.tick);
 

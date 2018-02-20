@@ -1,10 +1,8 @@
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
-	value: true
+  value: true
 });
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _multiplayer = require("../multiplayer.js");
 
@@ -24,155 +22,104 @@ var _events2 = _interopRequireDefault(_events);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+class ServerConnection extends _multiplayer2.default {
+  constructor(connection, ...args) {
+    super(...args);
+    this.local = null;
+    this.connection = connection;
+    this.connected = false;
+    this.queue = null;
+    this.serverUpdates = [];
+    this.connection.on('message', data => {
+      for (let i = 0; i < data.length; i++) {
+        let updates = data[i];
+        let data2 = JSON.parse(updates.data);
 
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+        if (updates.server) {
+          this.serverUpdates = this.serverUpdates.concat(data2);
+        }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+        let client = this.clients.get(updates.from);
 
-var ServerConnection = function (_Multiplayer) {
-	_inherits(ServerConnection, _Multiplayer);
+        if (!client) {
+          client = this.clients.push(new _clientStream.ClientUpdateStream(updates.from));
+        }
 
-	function ServerConnection(connection) {
-		var _ref;
+        client.cache(data2);
+      }
+    });
+  }
 
-		_classCallCheck(this, ServerConnection);
+  getLocalClient() {
+    return this.local;
+  }
 
-		for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-			args[_key - 1] = arguments[_key];
-		}
+  getClients() {
+    return this.clients;
+  }
 
-		var _this = _possibleConstructorReturn(this, (_ref = ServerConnection.__proto__ || Object.getPrototypeOf(ServerConnection)).call.apply(_ref, [this].concat(args)));
+  flush() {
+    let updates = this.local.toBeSent; //console.log(this.local);
 
-		_this.local = null;
-		//this.clients.push(new ClientUpdateStream(0, true));
+    if (updates.length > 0) {
+      this.connection.send(updates.splice(0));
+    }
 
-		_this.connection = connection;
-		_this.connected = false;
+    this.local.flush();
+  }
 
-		_this.queue = null;
+  update(frame) {
+    this.recv();
 
-		_this.serverUpdates = [];
+    while (this.serverUpdates.length > 0) {
+      this.process(this.serverUpdates.shift());
+    }
 
-		_this.connection.on('message', function (data) {
-			for (var i = 0; i < data.length; i++) {
-				var updates = data[i];
-				var data2 = JSON.parse(updates.data);
+    if (this.connected) this.local.update(frame);
+  }
 
-				if (updates.server) {
-					_this.serverUpdates = _this.serverUpdates.concat(data2);
-				}
+  clear() {
+    for (let cl of this.clients.arr) {
+      cl.clear();
+    }
+  }
 
-				var client = _this.clients.get(updates.from);
-				if (!client) {
-					client = _this.clients.push(new _clientStream.ClientUpdateStream(updates.from));
-				}
+  process(update) {
+    if (update.name == "CONNECTED") {
+      this.local = this.clients.push(new _clientStream.LocalClientUpdateStream(this.connection, update.id, update.isHost));
+      this.connected = true;
+      this.local.push({
+        name: "INIT"
+      }, false);
+      this.emit("connected", this.local);
+    } else if (update.name == "CLIENT_ADDED") {
+      if (update.id != this.local.id()) {
+        let nC = this.clients.push(new _clientStream.ClientUpdateStream(update.id, update.isHost));
+        this.emit("client-added", nC);
+      }
+    } else if (update.name == "CLIENTS_LIST") {
+      for (let cl of update.list) {
+        if (this.local.id() != cl.id) {
+          let cl2 = this.clients.push(new _clientStream.ClientUpdateStream(cl.id, cl.isHost));
+          this.emit("client-added", cl2);
+        }
+      }
+    } else if (update.name == "CLIENT_REMOVED") {
+      let id = update.id;
+      /*let cl = this.clients.get(id);
+      if (cl.toBeRead > 0) {
+      	this.clients.remove(id);
+      }*/
 
-				client.cache(data2);
-			}
-		});
-		return _this;
-	}
+      this.emit("client-removed", id);
+    } else if (update.name == "SET_HOST") {
+      this.clients.setHost(update.id);
+      this.emit("set-host", update.id);
+    }
+  }
 
-	_createClass(ServerConnection, [{
-		key: "getLocalClient",
-		value: function getLocalClient() {
-			return this.local;
-		}
-	}, {
-		key: "getClients",
-		value: function getClients() {
-			return this.clients;
-		}
-	}, {
-		key: "flush",
-		value: function flush() {
-			var updates = this.local.toBeSent;
+  destory() {}
 
-			//console.log(this.local);
-
-			if (updates.length > 0) {
-				this.connection.send(updates.splice(0));
-			}
-
-			this.local.flush();
-		}
-	}, {
-		key: "update",
-		value: function update(frame) {
-			this.recv();
-
-			while (this.serverUpdates.length > 0) {
-				this.process(this.serverUpdates.shift());
-			}
-
-			if (this.connected) this.local.update(frame);
-		}
-	}, {
-		key: "process",
-		value: function process(update) {
-			if (update.name == "CONNECTED") {
-				this.local = this.clients.push(new _clientStream.LocalClientUpdateStream(this.connection, update.id, update.isHost));
-				this.connected = true;
-
-				this.local.push({ name: "INIT" }, false);
-
-				this.emit("connected", this.local);
-			} else if (update.name == "CLIENT_ADDED") {
-				if (update.id != this.local.id()) {
-					var nC = this.clients.push(new _clientStream.ClientUpdateStream(update.id, update.isHost));
-
-					this.emit("client-added", nC);
-				}
-			} else if (update.name == "CLIENTS_LIST") {
-				var _iteratorNormalCompletion = true;
-				var _didIteratorError = false;
-				var _iteratorError = undefined;
-
-				try {
-					for (var _iterator = update.list[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-						var cl = _step.value;
-
-						if (this.local.id() != cl.id) {
-							var cl2 = this.clients.push(new _clientStream.ClientUpdateStream(cl.id, cl.isHost));
-							this.emit("client-added", cl2);
-						}
-					}
-				} catch (err) {
-					_didIteratorError = true;
-					_iteratorError = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion && _iterator.return) {
-							_iterator.return();
-						}
-					} finally {
-						if (_didIteratorError) {
-							throw _iteratorError;
-						}
-					}
-				}
-			} else if (update.name == "CLIENT_REMOVED") {
-				var id = update.id;
-
-				/*let cl = this.clients.get(id);
-    if (cl.toBeRead > 0) {
-    	this.clients.remove(id);
-    }*/
-
-				this.emit("client-removed", id);
-			} else if (update.name == "SET_HOST") {
-				this.clients.setHost(update.id);
-
-				this.emit("set-host", update.id);
-			}
-		}
-	}, {
-		key: "destory",
-		value: function destory() {}
-	}]);
-
-	return ServerConnection;
-}(_multiplayer2.default);
+}
 
 exports.default = ServerConnection;

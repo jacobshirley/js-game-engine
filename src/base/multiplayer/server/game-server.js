@@ -24,10 +24,6 @@ export default class GameServer extends Multiplayer {
             let cl = this.clients.push(new ServerClient(ws));
             let local = [];
 
-            /*if (this.clients.length() == 2) {
-                this.clients.setHost(cl.id());
-            }*/
-
             console.log("Added client "+cl.id());
             ws.id = cl.id();
 
@@ -94,10 +90,8 @@ export default class GameServer extends Multiplayer {
                     try {
                         client.send(clUpdates);
                     } catch (e) {
-                        //console.log(client.id()+", " + c+", "+this.clients.length());
                         this.clients.remove(client.id());
-                        //console.log(client.id()+", " + c+", "+this.clients.length());
-                        //console.log(e.message);
+                        console.log("Client error: " + e.message + " -> Removing client");
                     }
                 }
             }

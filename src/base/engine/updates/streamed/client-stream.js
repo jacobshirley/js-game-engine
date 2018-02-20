@@ -22,6 +22,11 @@ export class ClientUpdateStream extends Client {
 		this._cachedUpdates = this._cachedUpdates.concat(updates);
 	}
 
+	clear() {
+		this._cachedUpdates = [];
+		this.updates = [];
+	}
+
 	recv() {
 		this.updates = this.updates.concat(this._cachedUpdates.splice(0));
 	}

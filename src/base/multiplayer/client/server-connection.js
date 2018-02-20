@@ -9,7 +9,6 @@ export default class ServerConnection extends Multiplayer {
 		super(...args);
 
 		this.local = null;
-		//this.clients.push(new ClientUpdateStream(0, true));
 
 		this.connection = connection;
 		this.connected = false;
@@ -66,6 +65,12 @@ export default class ServerConnection extends Multiplayer {
 
 		if (this.connected)
 			this.local.update(frame);
+	}
+
+	clear() {
+		for (let cl of this.clients.arr) {
+			cl.clear();
+		}
 	}
 
 	process(update) {
