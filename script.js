@@ -17,8 +17,7 @@ function main() {
     const config = {
         multiplayer: test ? new ServerTestConnection() : new ServerConnection(connection),
         renderer: new ThreeRenderer(document.body),
-        updatesPerSecond: 60,
-        maxFPS: 1000
+        sendOnFrame: 2
     };
 
     let game = new Dominos(config);

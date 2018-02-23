@@ -15,7 +15,8 @@ function run() {
     let config = {multiplayer: server,
                   renderer: new Renderer(),
                   headless: true,
-                  server: true};
+                  server: true,
+                  sendOnFrame: 2};
 
     let game = new Dominos(config);
 

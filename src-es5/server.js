@@ -32,7 +32,8 @@ function run() {
     multiplayer: server,
     renderer: new _renderer2.default(),
     headless: true,
-    server: true
+    server: true,
+    sendOnFrame: 2
   };
   let game = new _dominos2.default(config);
   setInterval(() => {

@@ -69,7 +69,7 @@ export default class LockstepGame extends Game {
         if (typeof this.config.updatesPerSecond !== 'undefined')
             this.renderTimer.setUpdateRate(this.config.updatesPerSecond);
 
-        const sendInterval = new Interval(1, true);
+        const sendInterval = new Interval(this.config.sendOnFrame, true);
         sendInterval.on('complete', () => {
             this.multiplayer.flush();
         });
