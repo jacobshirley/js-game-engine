@@ -85,7 +85,7 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 				} else {
 					if (stream.toBeRead > 0) {
 						//console.log("applied "+stream.toBeRead+" on frame "+frame);
-						while (stream.toBeRead-- > 0 && it.hasNext()) {
+						while (it.hasNext() && stream.toBeRead-- > 0) {
 							let u = it.remove();
 							u.__clId = stream.id();
 
