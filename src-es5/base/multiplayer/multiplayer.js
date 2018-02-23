@@ -37,7 +37,9 @@ class Multiplayer extends _events2.default {
 
   getLocalClient() {}
 
-  getClients() {}
+  getClients() {
+    return this.clients;
+  }
 
   flush() {}
 

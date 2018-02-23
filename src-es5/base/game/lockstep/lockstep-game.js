@@ -83,7 +83,7 @@ class LockstepGame extends _game2.default {
     });
     if (typeof this.config.maxFPS !== 'undefined') this.renderTimer.setMaxFrames(this.config.maxFPS);
     if (typeof this.config.updatesPerSecond !== 'undefined') this.renderTimer.setUpdateRate(this.config.updatesPerSecond);
-    const sendInterval = new _interval2.default(2, true);
+    const sendInterval = new _interval2.default(1, true);
     sendInterval.on('complete', () => {
       this.multiplayer.flush();
     });

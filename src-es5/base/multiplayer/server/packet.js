@@ -15,10 +15,11 @@ var _stream2 = _interopRequireDefault(_stream);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class Packet extends _stream2.default {
-  constructor(from, string) {
+  constructor(from, string, server) {
     super();
     this.from = from;
     this.string = string;
+    this.server = typeof server == "undefined" ? false : server;
   }
 
   decode() {
@@ -27,7 +28,7 @@ class Packet extends _stream2.default {
 
   json() {
     return {
-      server: this.from === 0,
+      server: this.server,
       from: this.from,
       data: this.string
     };

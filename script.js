@@ -8,10 +8,10 @@ import Namespace from "./src/base/namespace.js";
 const test = false;
 
 function main() {
-    var connection = new TestConnection(50, 0);
+    let connection = new TestConnection(50, 0);
 
     if (!test) {
-        connection = new WebSocketConnection("ws://" + window.location.hostname + ":8080/");
+        connection = new WebSocketConnection("ws://127.0.0.1:8080/");
     }
 
     const config = {

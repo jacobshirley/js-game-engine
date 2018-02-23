@@ -28,8 +28,8 @@ var _multiplayer2 = _interopRequireDefault(_multiplayer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function encode(from, object) {
-  return new _packet2.default(from, JSON.stringify(object));
+function encode(server, from, object) {
+  return new _packet2.default(from, JSON.stringify(object), server);
 }
 
 class GameServer extends _multiplayer2.default {
@@ -59,28 +59,33 @@ class GameServer extends _multiplayer2.default {
         name: "SET_HOST",
         id: this.clients.hostId
       });
-      cl.send([encode(this.local.id(), local).json()]);
+      cl.send([encode(true, this.local.id(), local).json()]);
       this.local.push({
         name: "CLIENT_ADDED",
         id: cl.id(),
         isHost: cl.host()
       });
-      this.packets.push(encode(this.local.id(), [{
+      this.packets.push(encode(true, this.local.id(), [{
         name: "CLIENT_ADDED",
         id: cl.id(),
         isHost: cl.host()
       }]));
       ws.on('message', message => {
         cl.cache(JSON.parse(message));
-        this.packets.push(new _packet2.default(cl.id(), message));
+        this.packets.push(new _packet2.default(cl.id(), message, false));
+        this.emit("message", {
+          client: cl,
+          message: message
+        });
       });
       ws.on('close', ws2 => {
-        //console.log("attempting to remove");
-        this.packets.push(encode(this.local.id(), [{
+        this.packets.push(encode(true, this.local.id(), [{
           name: "CLIENT_REMOVED",
           id: cl.id()
         }]));
+        this.emit("disconnection", cl);
       });
+      this.emit("connection", cl);
     });
     this.emit("connected");
     this.connected = true;
@@ -88,10 +93,6 @@ class GameServer extends _multiplayer2.default {
 
   getLocalClient() {
     return this.local;
-  }
-
-  getClients() {
-    return this.clients;
   }
 
   update(frame) {
@@ -103,7 +104,8 @@ class GameServer extends _multiplayer2.default {
     let hostClient = this.clients.host();
     let it = this.clients.iterator();
     let c = 0;
-    let localUpdatePacket = encode(this.local.id(), this.local.toBeSent.splice(0)).json();
+    let us = this.local.toBeSent.splice(0);
+    let localUpdatePacket = encode(false, this.local.id(), us).json();
 
     while (it.hasNext()) {
       let client = it.next();

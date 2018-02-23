@@ -45,14 +45,6 @@ export default class ServerConnection extends Multiplayer {
     }
 
 	flush() {
-		let updates = this.local.toBeSent;
-
-		//console.log(this.local);
-
-        if (updates.length > 0) {
-            this.connection.send(updates.splice(0));
-        }
-
 		this.local.flush();
 	}
 
@@ -76,9 +68,8 @@ export default class ServerConnection extends Multiplayer {
 	process(update) {
 		if (update.name == "CONNECTED") {
  			this.local = this.clients.push(new LocalClientUpdateStream(this.connection, update.id, update.isHost));
-			this.connected = true;
-
 			this.local.push({name: "INIT"}, false);
+			this.connected = true;
 
 			this.emit("connected", this.local);
 		} else if (update.name == "CLIENT_ADDED") {
@@ -89,18 +80,23 @@ export default class ServerConnection extends Multiplayer {
 			}
 		} else if (update.name == "CLIENTS_LIST") {
 			for (let cl of update.list) {
-				if (this.local.id() != cl.id) {
-					let cl2 = this.clients.push(new ClientUpdateStream(cl.id, cl.isHost));
+				if (cl.id != this.local.id) {
+					let cl2 = null;
+
+					if (!this.clients.has(cl.id)) {
+						cl2 = this.clients.push(new ClientUpdateStream(cl.id, cl.isHost));
+					} else {
+						cl2 = this.clients.get(cl.id);
+						cl2.host(cl.isHost);
+					}
+
 					this.emit("client-added", cl2);
 				}
 			}
 		} else if (update.name == "CLIENT_REMOVED") {
 			let id = update.id;
 
-			/*let cl = this.clients.get(id);
-			if (cl.toBeRead > 0) {
-				this.clients.remove(id);
-			}*/
+			//no need to remove client as there may still be queued updates
 
 			this.emit("client-removed", id);
 		} else if (update.name == "SET_HOST") {

@@ -181,7 +181,7 @@ class Dominos extends _lockstepGame2.default {
       }
     } else if (update.name == "INIT_WORLD") {
       if (this.queue.isHost) {
-        let props = this.world.physics.getAllObjectProps();
+        let props = this.physics.getAllObjectProps();
         this.queue.pushFramed({
           name: "CREATE_WORLD",
           props

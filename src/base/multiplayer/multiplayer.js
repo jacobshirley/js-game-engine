@@ -28,7 +28,11 @@ export default class Multiplayer extends EventEmitter {
     }
 
     getLocalClient() {}
-    getClients() {}
+    
+    getClients() {
+        return this.clients;
+    }
+
     flush() {}
     update() {}
 }
