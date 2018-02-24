@@ -21,6 +21,10 @@ class PickingPhysicsUpdater extends _updateProcessor2.default {
     this.us = 0;
   }
 
+  updates() {
+    return this.us;
+  }
+
   process(update) {
     if (update.name == "CREATE") {
       this.us++;

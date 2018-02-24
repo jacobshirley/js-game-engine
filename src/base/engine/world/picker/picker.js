@@ -13,7 +13,8 @@ export default class Picker  {
 	    this.mouse = mouse;
 		this.queue = queue;
 
-		this.queue.addProcessor(new PickingPhysicsUpdater(queue, physics));
+		this.updater = new PickingPhysicsUpdater(queue, physics);
+		this.queue.addProcessor(this.updater);
 
 	    this.floor = null;
 
@@ -115,5 +116,9 @@ export default class Picker  {
 	}
 
 	update(frame) {
+	}
+
+	updates() {
+		return this.updater.us;
 	}
 }

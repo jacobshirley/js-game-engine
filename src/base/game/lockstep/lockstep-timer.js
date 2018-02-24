@@ -54,7 +54,7 @@ export default class LockstepTimer extends Timer {
 			let diff = update.tick - this.tick;
 
 			if (this._resetTick < update.tick && (diff <= this.minDelay)) {
-				//console.log("Delaying " + diff);
+				console.log("Delaying " + diff);
 
 				this._resetTick += this.delay;
 				this.addDelay(new Delay(this.delay, true));
@@ -64,7 +64,7 @@ export default class LockstepTimer extends Timer {
 
 				this.client.push({name: "RESET_CLOCK"}, false);*/
 
-				
+
 			}
 		} else if (update.name == "INIT_TICK") {
 			if (this.init)

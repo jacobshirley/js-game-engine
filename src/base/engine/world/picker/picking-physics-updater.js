@@ -14,6 +14,10 @@ export default class PickingPhysicsUpdater extends UpdateProcessor {
         this.us = 0;
     }
 
+    updates() {
+        return this.us;
+    }
+
     process(update) {
         if (update.name == "CREATE") {
             this.us++;

@@ -133,7 +133,7 @@ class Dominos extends _lockstepGame2.default {
   }
 
   getDebugString() {
-    return super.getDebugString() + "<br />";
+    return super.getDebugString() + "<br />" + this.picker.updates() + "<br /> Applied: " + this.queue.app;
   }
 
   init() {
@@ -151,7 +151,8 @@ class Dominos extends _lockstepGame2.default {
       this.controllers.add(mouse);
       this.picker = new _picker2.default(this.renderer, this.physics, mouse, this.queue);
     } else {
-      this.queue.addProcessor(new _pickingPhysicsUpdater2.default(this.queue, this.physics));
+      this.picker = new _pickingPhysicsUpdater2.default(this.queue, this.physics);
+      this.queue.addProcessor(this.picker);
     } //this.queue.addProcessor(new WorldUpdater(this.queue, this.world));
 
 

@@ -63,7 +63,7 @@ class LockstepGame extends _game2.default {
 
   _build() {
     this.queue = new _lockstepQueue2.default(this.multiplayer.getLocalClient(), this.multiplayer.getClients());
-    this.timer = new _lockstepTimer2.default(this.queue, 3, 2, 50);
+    this.timer = new _lockstepTimer2.default(this.queue, 5, 2, 50);
     this.controllers = new _controllers2.default(this.queue);
     this.queue.addProcessor(this.timer);
     this.renderTimer = new _gameTimer2.default(this.timer);
@@ -85,9 +85,9 @@ class LockstepGame extends _game2.default {
     if (typeof this.config.updatesPerSecond !== 'undefined') this.renderTimer.setUpdateRate(this.config.updatesPerSecond);
     const sendInterval = new _interval2.default(this.config.sendOnFrame, true);
     sendInterval.on('complete', () => {
-      this.multiplayer.flush();
+      this.multiplayer.flush(); //console.log(this.getDebugString());
     });
-    this.renderTimer.addInterval(sendInterval);
+    this.timer.addInterval(sendInterval);
     this.init();
   }
 

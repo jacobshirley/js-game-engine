@@ -41,7 +41,7 @@ export default class LockstepGame extends Game {
 
     _build() {
         this.queue = new LockstepUpdateQueue(this.multiplayer.getLocalClient(), this.multiplayer.getClients());
-        this.timer = new LockstepTimer(this.queue, 3, 2, 50);
+        this.timer = new LockstepTimer(this.queue, 5, 2, 50);
 
         this.controllers = new Controllers(this.queue);
 
@@ -72,9 +72,10 @@ export default class LockstepGame extends Game {
         const sendInterval = new Interval(this.config.sendOnFrame, true);
         sendInterval.on('complete', () => {
             this.multiplayer.flush();
+            //console.log(this.getDebugString());
         });
 
-        this.renderTimer.addInterval(sendInterval);
+        this.timer.addInterval(sendInterval);
 
         this.init();
     }

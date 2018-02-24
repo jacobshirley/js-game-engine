@@ -11,6 +11,7 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 
 		this.updates = [];
 		this.controlServerID = -1;
+		this.app = 0;
 	}
 
 	setControlServer(id) {
@@ -37,6 +38,7 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 				it.remove();
 
 				if (u.name == "APPLY") {
+					this.app++;
 					let data = u.updateMeta;
 					for (let d of data) {
 						let cl = this.clients.get(d.id);
@@ -79,7 +81,7 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 
 					if (updated) {
 						//console.log("applied "+i+ " on frame "+frame);
-
+						this.app++;
 						applied.push({id: stream.id(), count: i});
 					}
 				} else {

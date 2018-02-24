@@ -20,8 +20,8 @@ function main() {
         sendOnFrame: 2
     };
 
-    let game = new Dominos(config);
-    game.start();
+    window.game = new Dominos(config);
+    window.game.start();
 }
 
 main();

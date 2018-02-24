@@ -16,13 +16,13 @@ function run() {
                   renderer: new Renderer(),
                   headless: true,
                   server: true,
-                  sendOnFrame: 2};
+                  maxFPS: 60,
+                  sendOnFrame: 1};
 
     let game = new Dominos(config);
 
     setInterval(() => {
         game.update();
-        //console.log(game.getDebugString());
     }, REFRESH_RATE);
 }
 

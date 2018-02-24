@@ -21,7 +21,8 @@ class Picker {
     this.physics = physics;
     this.mouse = mouse;
     this.queue = queue;
-    this.queue.addProcessor(new _pickingPhysicsUpdater2.default(queue, physics));
+    this.updater = new _pickingPhysicsUpdater2.default(queue, physics);
+    this.queue.addProcessor(this.updater);
     this.floor = null;
     this.orbitControls = this.renderer.getOrbitControls();
     this.mouseDown = false;
@@ -123,6 +124,10 @@ class Picker {
   }
 
   update(frame) {}
+
+  updates() {
+    return this.updater.us;
+  }
 
 }
 

@@ -33,11 +33,12 @@ function run() {
     renderer: new _renderer2.default(),
     headless: true,
     server: true,
-    sendOnFrame: 2
+    maxFPS: 60,
+    sendOnFrame: 1
   };
   let game = new _dominos2.default(config);
   setInterval(() => {
-    game.update(); //console.log(game.getDebugString());
+    game.update();
   }, REFRESH_RATE);
 }
 

@@ -34,6 +34,11 @@ export default class ServerConnection extends Multiplayer {
 				client.cache(data2);
 			}
 		});
+
+		this.connection.on('error', (error) => {
+			console.log("Error");
+			console.log(error);
+		})
 	}
 
     getLocalClient() {

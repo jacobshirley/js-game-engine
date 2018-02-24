@@ -76,13 +76,13 @@ class LockstepTimer extends _timer2.default {
       let diff = update.tick - this.tick;
 
       if (this._resetTick < update.tick && diff <= this.minDelay) {
-        //console.log("Delaying " + diff);
+        console.log("Delaying " + diff);
         this._resetTick += this.delay;
         this.addDelay(new _delay2.default(this.delay, true));
       } else if (diff > this.maxDelay) {
         /*this.tick = update.tick - 30;
         this.time = update.time;
-        		this.client.push({name: "RESET_CLOCK"}, false);*/
+        	this.client.push({name: "RESET_CLOCK"}, false);*/
       }
     } else if (update.name == "INIT_TICK") {
       if (this.init) return;

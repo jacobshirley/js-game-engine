@@ -29,6 +29,7 @@ class LockstepUpdateQueue extends _streamUpdateQueue2.default {
     super(local, clients);
     this.updates = [];
     this.controlServerID = -1;
+    this.app = 0;
   }
 
   setControlServer(id) {
@@ -53,6 +54,7 @@ class LockstepUpdateQueue extends _streamUpdateQueue2.default {
         it.remove();
 
         if (u.name == "APPLY") {
+          this.app++;
           let data = u.updateMeta;
 
           for (let d of data) {
@@ -93,6 +95,7 @@ class LockstepUpdateQueue extends _streamUpdateQueue2.default {
 
           if (updated) {
             //console.log("applied "+i+ " on frame "+frame);
+            this.app++;
             applied.push({
               id: stream.id(),
               count: i
