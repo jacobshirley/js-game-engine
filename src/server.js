@@ -1,28 +1,26 @@
-import Timer from "./base/engine/timing/timer.js";
-import Renderer from "./base/engine/world/rendering/renderer.js";
+import Renderer from "./ext/rendering/renderer.js";
 import Dominos from "./dominos.js";
-import EventEmitter from "./base/shims/events.js";
-
-import GameServer from "./base/multiplayer/server/game-server.js";
+import LockstepEngine from "./base/engine/lockstep/lockstep-engine.js";
+import ClientHandler from "./base/engine/lockstep/server/client-handler.js";
 
 const SERVER_INDEX = 0;
 const MAX_CLIENTS = 64;
 const REFRESH_RATE = 1000 / 128;
 
 function run() {
-    let server = new GameServer(8080, MAX_CLIENTS);
-
-    let config = {multiplayer: server,
+    let config = {clientInterface: new ClientHandler(8080, MAX_CLIENTS),
                   renderer: new Renderer(),
                   headless: true,
                   server: true,
                   maxFPS: 60,
-                  sendOnFrame: 1};
+                  sendOnFrame: 1,
+                  port: 8080};
 
     let game = new Dominos(config);
+    let engine = new LockstepEngine(game, config);
 
     setInterval(() => {
-        game.update();
+        engine.update();
     }, REFRESH_RATE);
 }
 

@@ -7,7 +7,7 @@ import ServerTestHandler from "./src/base/engine/lockstep/client/server-test-han
 import Dominos from "./src/dominos.js";
 import Namespace from "./src/base/namespace.js";
 
-const test = true;
+const test = false;
 
 function main() {
     let connection = null;

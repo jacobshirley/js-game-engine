@@ -17,15 +17,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const DEFAULT_UPDATE_RATE = 1000 / 60;
 
 class GameTimer extends _renderTimer2.default {
-  constructor(timer, renderFunc, logicFunc) {
+  constructor(logicTimer, renderFunc, logicFunc) {
     super();
 
     this.renderFunc = renderFunc || (() => {});
 
     this.logicFunc = logicFunc || (() => {});
 
-    this.updateInterval = DEFAULT_UPDATE_RATE;
-    this.updateTimer = timer || new _timer2.default();
+    this.logicInterval = DEFAULT_UPDATE_RATE;
+    this.logicTimer = logicTimer || new _timer2.default();
     this.renderTime = 0;
     this.updateTime = 0;
     this.fps = 0;
@@ -43,26 +43,26 @@ class GameTimer extends _renderTimer2.default {
   }
 
   setUpdateRate(updateRate) {
-    this.updateInterval = 1000 / updateRate;
+    this.logicInterval = 1000 / updateRate;
   }
 
   getDebugString() {
-    return "Tick: " + this.updateTimer.tick + "<br /> Time (ms): " + this.updateTimer.time + "<br /> FPS: " + this.fps + "<br /> UPS: " + this.ups;
+    return "Tick: " + this.logicTimer.tick + "<br /> Time (ms): " + this.logicTimer.time + "<br /> FPS: " + this.fps + "<br /> UPS: " + this.ups;
   }
 
   update() {
     let t = 0;
 
-    while (this.updateTime >= this.updateInterval && t < 65) {
+    while (this.updateTime >= this.logicInterval && t < 65) {
       // < 65 so it can catch up and doesn't go crazy
-      if (!this.updateTimer.update(() => {
-        this.logicFunc(this.updateTimer.tick);
+      if (!this.logicTimer.update(() => {
+        this.logicFunc(this.logicTimer.tick);
         t++;
-        this.updateTime -= this.updateInterval;
+        this.updateTime -= this.logicInterval;
         this.tempUPS++;
         return true;
       })) {
-        this.updateTime -= this.updateInterval;
+        this.updateTime -= this.logicInterval;
       }
     }
   }

@@ -1,10 +1,6 @@
 "use strict";
 
-var _timer = require("./base/engine/timing/timer.js");
-
-var _timer2 = _interopRequireDefault(_timer);
-
-var _renderer = require("./base/engine/world/rendering/renderer.js");
+var _renderer = require("./ext/rendering/renderer.js");
 
 var _renderer2 = _interopRequireDefault(_renderer);
 
@@ -12,13 +8,13 @@ var _dominos = require("./dominos.js");
 
 var _dominos2 = _interopRequireDefault(_dominos);
 
-var _events = require("./base/shims/events.js");
+var _lockstepEngine = require("./base/engine/lockstep/lockstep-engine.js");
 
-var _events2 = _interopRequireDefault(_events);
+var _lockstepEngine2 = _interopRequireDefault(_lockstepEngine);
 
-var _gameServer = require("./base/multiplayer/server/game-server.js");
+var _clientHandler = require("./base/engine/lockstep/server/client-handler.js");
 
-var _gameServer2 = _interopRequireDefault(_gameServer);
+var _clientHandler2 = _interopRequireDefault(_clientHandler);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -27,18 +23,19 @@ const MAX_CLIENTS = 64;
 const REFRESH_RATE = 1000 / 128;
 
 function run() {
-  let server = new _gameServer2.default(8080, MAX_CLIENTS);
   let config = {
-    multiplayer: server,
+    clientInterface: new _clientHandler2.default(8080, MAX_CLIENTS),
     renderer: new _renderer2.default(),
     headless: true,
     server: true,
     maxFPS: 60,
-    sendOnFrame: 1
+    sendOnFrame: 1,
+    port: 8080
   };
   let game = new _dominos2.default(config);
+  let engine = new _lockstepEngine2.default(game, config);
   setInterval(() => {
-    game.update();
+    engine.update();
   }, REFRESH_RATE);
 }
 

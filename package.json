@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "environment.js",
   "scripts": {
-    "build-server": "babel src -d src-es5/ -w",
+    "build-server": "babel src/ -d src-es5/ -w",
     "run-server": "node src-es5/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
