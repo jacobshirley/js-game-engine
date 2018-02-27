@@ -1,18 +1,14 @@
 "use strict";
 
-var _renderer = require("./ext/rendering/renderer.js");
-
-var _renderer2 = _interopRequireDefault(_renderer);
-
 var _dominos = require("./dominos.js");
 
 var _dominos2 = _interopRequireDefault(_dominos);
 
-var _lockstepEngine = require("./base/engine/lockstep/lockstep-engine.js");
+var _lockstepEngine = require("./lockstep/lockstep-engine.js");
 
 var _lockstepEngine2 = _interopRequireDefault(_lockstepEngine);
 
-var _clientHandler = require("./base/engine/lockstep/server/client-handler.js");
+var _clientHandler = require("./lockstep/server/client-handler.js");
 
 var _clientHandler2 = _interopRequireDefault(_clientHandler);
 
@@ -25,7 +21,6 @@ const REFRESH_RATE = 1000 / 128;
 function run() {
   let config = {
     clientInterface: new _clientHandler2.default(8080, MAX_CLIENTS),
-    renderer: new _renderer2.default(),
     headless: true,
     server: true,
     maxFPS: 60,

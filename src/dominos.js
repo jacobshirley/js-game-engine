@@ -8,6 +8,8 @@ import PickerBase from "./ext/picker/picker-base.js";
 
 import MouseController from "./base/controller/mouse.js";
 
+import ThreeRenderer from "./ext/rendering/three/renderer.js";
+
 const BRICKS = 60;
 
 if (typeof window !== 'undefined') {
@@ -22,8 +24,8 @@ export default class Dominos extends Game {
     constructor(config) {
         super(config);
 
-        this.renderer = config.renderer;
         if (!this.config.headless) {
+            this.renderer = new ThreeRenderer(document.body);
             this.initRenderer();
         }
         this.inited = false;

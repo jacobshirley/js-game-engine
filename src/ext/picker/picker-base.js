@@ -1,4 +1,4 @@
-import UpdateProcessor from "../../base/engine/updates/update-processor.js";
+import UpdateProcessor from "../../base/updates/update-processor.js";
 import Physics from "../ammo/physics.js";
 
 export default class PickerBase extends UpdateProcessor {

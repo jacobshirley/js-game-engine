@@ -32,6 +32,10 @@ var _mouse = require("./base/controller/mouse.js");
 
 var _mouse2 = _interopRequireDefault(_mouse);
 
+var _renderer = require("./ext/rendering/three/renderer.js");
+
+var _renderer2 = _interopRequireDefault(_renderer);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const BRICKS = 60;
@@ -47,9 +51,9 @@ function setDebugText(text) {
 class Dominos extends _game2.default {
   constructor(config) {
     super(config);
-    this.renderer = config.renderer;
 
     if (!this.config.headless) {
+      this.renderer = new _renderer2.default(document.body);
       this.initRenderer();
     }
 

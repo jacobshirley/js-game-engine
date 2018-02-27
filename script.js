@@ -1,8 +1,7 @@
 import {TestConnection, WebSocketConnection} from "./src/base/net/connection.js";
-import ThreeRenderer from "./src/ext/rendering/three/renderer.js";
-import LockstepEngine from "./src/base/engine/lockstep/lockstep-engine.js";
-import ServerHandler from "./src/base/engine/lockstep/client/server-handler.js";
-import ServerTestHandler from "./src/base/engine/lockstep/client/server-test-handler.js";
+import LockstepEngine from "./src/lockstep/lockstep-engine.js";
+import ServerHandler from "./src/lockstep/client/server-handler.js";
+import ServerTestHandler from "./src/lockstep/client/server-test-handler.js";
 
 import Dominos from "./src/dominos.js";
 import Namespace from "./src/base/namespace.js";
@@ -19,7 +18,6 @@ function main() {
     const config = {
         clientInterface: test ? new ServerTestHandler() : new ServerHandler(connection),
         connection: connection,
-        renderer: new ThreeRenderer(document.body),
         sendOnFrame: 2
     };
 

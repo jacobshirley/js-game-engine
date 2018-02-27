@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _updateProcessor = require("../../base/engine/updates/update-processor.js");
+var _updateProcessor = require("../../base/updates/update-processor.js");
 
 var _updateProcessor2 = _interopRequireDefault(_updateProcessor);
 
