@@ -53,6 +53,11 @@ export default class ServerHandler extends LockstepClientInterface {
 		this.local.flush();
 	}
 
+	reconnect() {
+		this.connection.close();
+		this.connection.connect();
+	}
+
 	update(frame) {
 		this.recv();
 

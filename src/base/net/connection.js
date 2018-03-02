@@ -11,7 +11,7 @@ export default class Connection extends EventEmitter {
 		return this.connected;
 	}
 
-	disconnect() {}
+	close() {}
 
 	send(data) {}
 }
@@ -21,7 +21,11 @@ export class WebSocketConnection extends Connection {
 		super();
 
 		this.ip = ip;
-		this.ws = new WebSocket(ip);
+		this.connect();
+	}
+
+	connect() {
+		this.ws = new WebSocket(this.ip);
 
 		this.ws.onopen = () => {
 			this.connected = true;
@@ -40,6 +44,10 @@ export class WebSocketConnection extends Connection {
 		this.ws.onmessage = (ev) => {
 			this.emit('message', JSON.parse(ev.data));
 		}
+	}
+
+	close() {
+		this.ws.close();
 	}
 
 	send(data) {

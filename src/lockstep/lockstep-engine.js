@@ -18,18 +18,6 @@ export default class LockstepEngine {
                 this._build();
             });
         }
-
-        this.tabActive = true;
-
-		if (typeof window !== 'undefined') {
-			$(window).focus(() => {
-			    this.tabActive = true;
-			});
-
-			$(window).blur(() => {
-			    this.tabActive = false;
-			});
-		}
     }
 
     get isServer() {
@@ -38,8 +26,9 @@ export default class LockstepEngine {
 
     _build() {
         this.queue = new LockstepUpdateQueue(this.clientInterface.getLocalClient(), this.clientInterface.getClients());
-        this.renderTimer = new LockstepTimer(this.queue, 5, 2, 20);
+        this.renderTimer = new LockstepTimer(this, 4, 2, 7, 1000);
         this.logicTimer = this.renderTimer.logicTimer;
+
         this.queue.addProcessor(this.renderTimer);
 
         this.controllers = new Controllers(this.queue);
@@ -92,15 +81,7 @@ export default class LockstepEngine {
     }
 
     start() {
-        if (typeof window !== 'undefined') {
-            /*setInterval(() => {
-                if (document.visibilityState === "hidden") {
-                    this.update();
-                }
-            }, 1000 / 128);*/
-
-            this._start();
-        }
+        this._start();
     }
 
     _start() {
@@ -109,5 +90,15 @@ export default class LockstepEngine {
 
             this._start();
         });
+    }
+
+    restart() {
+        this.renderTimer.reset();
+        this.logicTimer.reset();
+
+        this.clientInterface.clear();
+        this.clientInterface.reconnect();
+
+        this.game.destroy();
     }
 }

@@ -73,7 +73,7 @@ export default class ThreeRenderer extends DOMRenderer {
 	}
 
 	destroy() {
-
+		this.removeAll();
 	}
 
 	addObject(object) {

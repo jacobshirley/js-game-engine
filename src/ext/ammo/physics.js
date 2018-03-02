@@ -34,6 +34,10 @@ export default class Physics {
         this.objects = [];
     }
 
+    setGravity(grav) {
+        this.dynamicsWorld.setGravity(new Ammo.btVector3(0, grav, 0));
+    }
+
     getBodyID(body) {
         return this.objects.indexOf(body);
     }

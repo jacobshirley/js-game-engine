@@ -23,9 +23,10 @@ var _lockstepQueueError2 = _interopRequireDefault(_lockstepQueueError);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class LockstepTimer extends _gameTimer2.default {
-  constructor(client, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 50, syncInterval = 5) {
+  constructor(engine, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 5000, syncInterval = 50) {
     super();
-    this.client = client;
+    this.engine = engine;
+    this.queue = engine.queue;
     this.delay = delay;
     this.minDelay = minDelay;
     this.maxDelay = maxDelay;
@@ -36,10 +37,10 @@ class LockstepTimer extends _gameTimer2.default {
     this._requestedReset = false;
     this._minUpdates = 0;
 
-    if (this.client.isHost) {
+    if (this.queue.isHost) {
       let interval = new _interval2.default(this.syncInterval, true);
       interval.on('complete', () => {
-        this.client.push({
+        this.queue.push({
           name: "HOST_TICK",
           tick: this.logicTimer.tick,
           time: this.logicTimer.time
@@ -63,9 +64,9 @@ class LockstepTimer extends _gameTimer2.default {
   }
 
   process(update) {
-    if (this.client.isHost) {
+    if (this.queue.isHost) {
       if (update.name == "CLIENT_ADDED" || update.name == "REQUEST_RESET") {
-        this.client.push({
+        this.queue.push({
           name: "INIT_TICK",
           target: update.id || update.__clId,
           tick: this.logicTimer.tick
@@ -82,29 +83,21 @@ class LockstepTimer extends _gameTimer2.default {
 
       if (!this._requestedReset && this._resetTick < update.tick) {
         if (diff >= 0 && diff <= this.minDelay) {
-          //console.log("SDFFD");
           this._resetTick += this.delay;
           this.logicTimer.addDelay(new _delay2.default(this.delay, true));
         } else if (diff < 0 || diff >= this.resetDelay) {
-          this._requestedReset = true; //	console.log(update.__updateId+", "+this.logicTimer.tick+", "+diff+", " + this._resetTick);
-
-          this.client.push({
-            name: "REQUEST_RESET"
-          }, true);
+          this._requestedReset = true;
+          this.engine.restart();
         } else if (diff > this.maxDelay) {
-          //console.log(diff);
           this.updateTime = this.logicInterval * Math.max(0, diff - this.delay);
         }
       }
-    } else if (update.name == "INIT_TICK" && update.target == this.client.local.id()) {
+    } else if (update.name == "INIT_TICK" && update.target == this.queue.local.id()) {
       this._requestedReset = false;
       this.logicTimer.tick = update.tick - 1;
       this._resetTick = update.tick + this.delay;
       this.updateTime = 0;
-      this.deltaTime = this.logicInterval; //console.log(update.__updateId +" init tick");
-      //console.log(this.client.clients);
-      //	console.log("yay");
-
+      this.deltaTime = this.logicInterval;
       this.addDelay(new _delay2.default(this.delay, true));
       this._inited = true;
     } else if (update.name == "RESET_CLOCK") {}

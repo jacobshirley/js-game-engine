@@ -4,10 +4,11 @@ import Delay from "../base/timing/delay.js";
 import LockstepQueueError from "./lockstep-queue-error.js";
 
 export default class LockstepTimer extends GameTimer {
-	constructor(client, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 50, syncInterval = 5) {
+	constructor(engine, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 5000, syncInterval = 50) {
 		super();
 
-		this.client = client;
+		this.engine = engine;
+		this.queue = engine.queue;
 		this.delay = delay;
 		this.minDelay = minDelay;
 		this.maxDelay = maxDelay;
@@ -18,11 +19,11 @@ export default class LockstepTimer extends GameTimer {
 		this._requestedReset = false;
 		this._minUpdates = 0;
 
-		if (this.client.isHost) {
+		if (this.queue.isHost) {
 			let interval = new Interval(this.syncInterval, true);
 
 			interval.on('complete', () => {
-				this.client.push({name: "HOST_TICK", tick: this.logicTimer.tick, time: this.logicTimer.time}, true);
+				this.queue.push({name: "HOST_TICK", tick: this.logicTimer.tick, time: this.logicTimer.time}, true);
 			});
 
 			this.logicTimer.addInterval(interval);
@@ -43,9 +44,9 @@ export default class LockstepTimer extends GameTimer {
 	}
 
 	process(update) {
-		if (this.client.isHost) {
+		if (this.queue.isHost) {
 			if (update.name == "CLIENT_ADDED" || update.name == "REQUEST_RESET") {
-				this.client.push({name: "INIT_TICK", target: update.id || update.__clId, tick: this.logicTimer.tick}, true);
+				this.queue.push({name: "INIT_TICK", target: update.id || update.__clId, tick: this.logicTimer.tick}, true);
 			}
 
 			return;
@@ -60,19 +61,17 @@ export default class LockstepTimer extends GameTimer {
 
 			if (!this._requestedReset && this._resetTick < update.tick) {
 				if (diff >= 0 && diff <= this.minDelay) {
-					//console.log("SDFFD");
 					this._resetTick += this.delay;
 					this.logicTimer.addDelay(new Delay(this.delay, true));
 				} else if (diff < 0 || diff >= this.resetDelay) {
 					this._requestedReset = true;
-				//	console.log(update.__updateId+", "+this.logicTimer.tick+", "+diff+", " + this._resetTick);
-					this.client.push({name: "REQUEST_RESET"}, true);
+
+					this.engine.restart();
 				} else if (diff > this.maxDelay) {
-					//console.log(diff);
 					this.updateTime = this.logicInterval * (Math.max(0, diff - this.delay));
 				}
 			}
-		} else if (update.name == "INIT_TICK" && update.target == this.client.local.id()) {
+		} else if (update.name == "INIT_TICK" && update.target == this.queue.local.id()) {
 			this._requestedReset = false;
 
 			this.logicTimer.tick = update.tick - 1;
@@ -81,9 +80,6 @@ export default class LockstepTimer extends GameTimer {
 			this.updateTime = 0;
 			this.deltaTime = this.logicInterval;
 
-			//console.log(update.__updateId +" init tick");
-			//console.log(this.client.clients);
-		//	console.log("yay");
 			this.addDelay(new Delay(this.delay, true));
 
 			this._inited = true;

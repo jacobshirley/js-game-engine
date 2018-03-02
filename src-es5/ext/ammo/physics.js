@@ -46,6 +46,10 @@ class Physics {
     this.objects = [];
   }
 
+  setGravity(grav) {
+    this.dynamicsWorld.setGravity(new _ammo2.default.btVector3(0, grav, 0));
+  }
+
   getBodyID(body) {
     return this.objects.indexOf(body);
   }

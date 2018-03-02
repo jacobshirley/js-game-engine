@@ -220,6 +220,12 @@ class Dominos extends _game2.default {
     }
   }
 
+  destroy() {
+    this.physics.reset();
+    this.renderer.destroy();
+    this.inited = false; //this.world.destroy();
+  }
+
   process(update) {
     if (update.name == "CREATE_WORLD") {
       if (!this.isServer && !this.inited) {

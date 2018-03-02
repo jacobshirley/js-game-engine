@@ -15,7 +15,7 @@ class Connection extends EventEmitter {
     return this.connected;
   }
 
-  disconnect() {}
+  close() {}
 
   send(data) {}
 
@@ -27,7 +27,11 @@ class WebSocketConnection extends Connection {
   constructor(ip) {
     super();
     this.ip = ip;
-    this.ws = new WebSocket(ip);
+    this.connect();
+  }
+
+  connect() {
+    this.ws = new WebSocket(this.ip);
 
     this.ws.onopen = () => {
       this.connected = true;
@@ -46,6 +50,10 @@ class WebSocketConnection extends Connection {
     this.ws.onmessage = ev => {
       this.emit('message', JSON.parse(ev.data));
     };
+  }
+
+  close() {
+    this.ws.close();
   }
 
   send(data) {

@@ -100,7 +100,9 @@ class ThreeRenderer extends _domRenderer2.default {
     return mesh;
   }
 
-  destroy() {}
+  destroy() {
+    this.removeAll();
+  }
 
   addObject(object) {
     if (object instanceof THREE.Light) {

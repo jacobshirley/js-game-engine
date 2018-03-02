@@ -66,6 +66,11 @@ class ServerHandler extends _lockstepClientInterface2.default {
     this.local.flush();
   }
 
+  reconnect() {
+    this.connection.close();
+    this.connection.connect();
+  }
+
   update(frame) {
     this.recv();
 

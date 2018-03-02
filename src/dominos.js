@@ -171,6 +171,13 @@ export default class Dominos extends Game {
         }
     }
 
+    destroy() {
+        this.physics.reset();
+        this.renderer.destroy();
+        this.inited = false;
+        //this.world.destroy();
+    }
+
     process(update) {
 		if (update.name == "CREATE_WORLD") {
             if (!this.isServer && !this.inited) {

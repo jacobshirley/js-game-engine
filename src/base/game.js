@@ -14,6 +14,8 @@ export default class Game {
 
     init() {}
 
+    destroy() {}
+
     logic() {}
 
     render() {}

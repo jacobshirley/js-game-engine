@@ -14,6 +14,12 @@ export default class World {
         this.physics = physics;
     }
 
+    destroy() {
+        this.objects = [];
+        this.physics.destroy();
+        this.renderer.destroy();
+    }
+
     getWorldState() {
         let states = [];
 

@@ -20,6 +20,8 @@ class Game {
 
   init() {}
 
+  destroy() {}
+
   logic() {}
 
   render() {}
