@@ -95,6 +95,8 @@ export default class ServerHandler extends LockstepClientInterface {
 						cl2.host(cl.isHost);
 					}
 
+					cl2.updates = cl.updates.concat(cl2.updates); //put the old updates before any potential new updates
+
 					this.emit("client-added", cl2);
 				}
 			}
@@ -110,6 +112,4 @@ export default class ServerHandler extends LockstepClientInterface {
 			this.emit("set-host", update.id);
 		}
 	}
-
-	destory() {}
 }

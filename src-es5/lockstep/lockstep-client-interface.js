@@ -13,9 +13,9 @@ var _client = require("../base/updates/client.js");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class LockstepClientInterface extends _events2.default {
-  constructor() {
+  constructor(clients) {
     super();
-    this.clients = new _client.ClientList();
+    this.clients = clients || new _client.ClientList();
   }
 
   recv() {

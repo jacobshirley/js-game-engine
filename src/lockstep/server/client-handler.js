@@ -18,22 +18,13 @@ export default class GameServer extends LockstepClientInterface {
         this.local = this.clients.push(new LocalClientUpdateStream());
         this.clients.setHost(this.local.id());
 
+        this.connections = [];
         this.packets = [];
         this.wss.on('connection', (ws) => {
             let cl = this.clients.push(new ServerClient(ws));
-            let local = [];
-
-            console.log("Added client "+cl.id());
             ws.id = cl.id();
 
-        	local.push({name: "CONNECTED", id: cl.id(), isHost: cl.host()});
-            local.push({name: "CLIENTS_LIST", list: this.clients.export()});
-            local.push({name: "SET_HOST", id: this.clients.hostId});
-
-            cl.send([encode(true, this.local.id(), local).json()]);
-
-            this.local.push({name: "CLIENT_ADDED", id: cl.id(), isHost: cl.host()});
-            this.packets.push(encode(true, this.local.id(), [{name: "CLIENT_ADDED", id: cl.id(), isHost: cl.host()}]));
+            this.connections.push(cl);
 
         	ws.on('message', (message) => {
                 cl.cache(JSON.parse(message));
@@ -47,8 +38,6 @@ export default class GameServer extends LockstepClientInterface {
 
                 this.emit("disconnection", cl);
          	});
-
-            this.emit("connection", cl);
         });
 
         this.emit("connected");
@@ -62,12 +51,28 @@ export default class GameServer extends LockstepClientInterface {
     update(frame) {
         this.recv();
         this.local.update(frame);
+
+        while (this.connections.length > 0) {
+            let conn = this.connections.shift();
+            let initialUpdates = [];
+
+        	initialUpdates.push({name: "CONNECTED", id: conn.id(), isHost: conn.host()});
+            initialUpdates.push({name: "CLIENTS_LIST", list: this.clients.export()});
+            initialUpdates.push({name: "SET_HOST", id: this.clients.hostId});
+            conn.send([encode(true, this.local.id(), initialUpdates).json()]);
+
+            this.local.push({name: "CLIENT_ADDED", id: conn.id(), isHost: conn.host()});
+            this.packets.push(encode(true, this.local.id(), [{name: "CLIENT_ADDED", id: conn.id(), isHost: conn.host()}]));
+
+            this.emit("connection", conn);
+
+            console.log("Added client " + conn.id());
+        }
     }
 
     flush() {
         let hostClient = this.clients.host();
         let it = this.clients.iterator();
-        let c = 0;
         let us = this.local.toBeSent.splice(0);
 
         let localUpdatePacket = encode(false, this.local.id(), us).json();
@@ -95,8 +100,6 @@ export default class GameServer extends LockstepClientInterface {
                     }
                 }
             }
-
-            c++;
         }
 
         this.packets = [];

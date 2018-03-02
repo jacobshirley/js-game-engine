@@ -20,6 +20,12 @@ export default class GameTimer extends RenderTimer {
 
         this.ups = 0;
         this.tempUPS = 0;
+
+		this.catchup = 4;
+		this._dynamicCatchup = this.catchup;
+		this.lastUpdateDuration = 0;
+
+		this.setMaxDeltaTime(100);
     }
 
 	setRenderFunction(func) {
@@ -31,30 +37,41 @@ export default class GameTimer extends RenderTimer {
 	}
 
 	setUpdateRate(updateRate) {
-        this.logicInterval = 1000 / updateRate;
+        this.logicInterval = 1000.0 / updateRate;
     }
+
+	setMaxCatchup(catchup) {
+		this.catchup = catchup;
+		this._dynamicCatchup = this.catchup;
+	}
 
 	getDebugString() {
         return "Tick: "+this.logicTimer.tick+"<br /> Time (ms): "+this.logicTimer.time+"<br /> FPS: "+this.fps+"<br /> UPS: "+this.ups;
     }
 
 	update() {
-		let t = 0;
+		let i = 0;
 
-		while (this.updateTime >= this.logicInterval && t < 65) { // < 65 so it can catch up and doesn't go crazy
+		let start = Date.now();
+		if (this.updateTime > 100) {
+			//console.log(this.updateTime);
+		}
+		while (this.updateTime >= this.logicInterval && i < this.catchup) {
 			if (!this.logicTimer.update(() => {
 				this.logicFunc(this.logicTimer.tick);
 
-				t++;
-
 				this.updateTime -= this.logicInterval;
 				this.tempUPS++;
+
+				i++;
 
 				return true;
 			})) {
 				this.updateTime -= this.logicInterval;
 			}
 		}
+
+		this.lastUpdateDuration = Date.now() - start;
 	}
 
 	render() {

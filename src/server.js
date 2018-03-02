@@ -10,7 +10,6 @@ function run() {
     let config = {clientInterface: new ClientHandler(8080, MAX_CLIENTS),
                   headless: true,
                   server: true,
-                  maxFPS: 60,
                   sendOnFrame: 1,
                   port: 8080};
 

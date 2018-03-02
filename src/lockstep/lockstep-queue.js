@@ -75,6 +75,7 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 					while (it.hasNext()) {
 						let u = it.remove();
 						u.__clId = stream.id();
+
 						this.updates.push(u);
 						i++;
 					}
@@ -90,7 +91,6 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 						while (it.hasNext() && stream.toBeRead-- > 0) {
 							let u = it.remove();
 							u.__clId = stream.id();
-
 							this.updates.push(u);
 						}
 
@@ -110,14 +110,16 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 
 	handleUpdates(frame) {
 		while (this.updates.length > 0) {
-			let u = this.updates.shift();
-
-			for (let processor of this.processors) {
-		    	processor.process(u);
-		    }
-
-			this.processedUpdates++;
+			this.processUpdate(this.updates.shift());
 		}
+	}
+
+	processUpdate(u) {
+		for (let processor of this.processors) {
+			processor.process(u);
+		}
+
+		this.processedUpdates++;
 	}
 
 	update(frame) {

@@ -8,7 +8,7 @@ export default class RenderTimer extends Timer {
 	}
 
 	setMaxFrames(max) {
-		let delay = new MaxFrameDelay(1000.0/max);
+		let delay = new MaxFrameDelay(1000.0 / max);
 		if (this.delay == null) {
 			this.delay = delay;
 			this.addDelay(this.delay);

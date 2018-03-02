@@ -16,8 +16,6 @@ class Timer extends _counter2.default {
     this.delayCounter = new _counter2.default();
     this.delays = [];
     this.intervals = [];
-    this.parent = null;
-    this.tetherables = [];
     this.delayed = false;
     this.paused = false;
   }
@@ -40,24 +38,6 @@ class Timer extends _counter2.default {
   addInterval(interval) {
     interval.reset(this);
     this.intervals.push(interval);
-  }
-
-  addTetherable(child) {
-    this.tetherables.push(child);
-  }
-
-  removeTetherable(child) {
-    this.tetherables.splice(this.tetherables.indexOf(child), 1);
-  }
-
-  tether(parent) {
-    this.parent = parent;
-    this.parent.addTetherable(this);
-  }
-
-  untether() {
-    this.parent = null;
-    this.parent.removeTetherable(this);
   }
 
   setTick(newTick) {
@@ -94,11 +74,6 @@ class Timer extends _counter2.default {
       } else {
         this.tick = this.parent.tick;
         this.time = this.parent.time;
-      }
-
-      for (let tetherable of this.tetherables) {
-        tetherable.tick = this.tick;
-        tetherable.time = this.time;
       }
 
       for (let interval of this.intervals) {

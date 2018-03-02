@@ -35,6 +35,13 @@ class Client {
     return this._id;
   }
 
+  export() {
+    return {
+      id: this._id,
+      isHost: this._isHost
+    };
+  }
+
 }
 
 exports.default = Client;
@@ -131,10 +138,7 @@ class ClientList {
 
     while (it.hasNext()) {
       let cl = it.remove();
-      clients.push({
-        id: cl.id(),
-        isHost: cl.host()
-      });
+      clients.push(cl.export());
     }
 
     return clients;

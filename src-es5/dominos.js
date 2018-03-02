@@ -38,7 +38,7 @@ var _renderer2 = _interopRequireDefault(_renderer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const BRICKS = 60;
+const BRICKS = 10;
 
 if (typeof window !== 'undefined') {
   var $debugPane = $("#debug");
@@ -227,10 +227,12 @@ class Dominos extends _game2.default {
         this.createObjects();
       }
 
+      console.log("reset");
       this.reset(update.states);
-    } else if (update.name == "INIT" || update.name == "RESET_CLOCK") {
+    } else if (update.name == "INIT_TICK") {
       if (!this.queue.isHost) {
-        //this.engine.clientInterface.clear();
+        console.log("sending"); //this.engine.clientInterface.clear();
+
         this.queue.push({
           name: "INIT_WORLD"
         }, true);

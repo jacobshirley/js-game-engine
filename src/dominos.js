@@ -10,7 +10,7 @@ import MouseController from "./base/controller/mouse.js";
 
 import ThreeRenderer from "./ext/rendering/three/renderer.js";
 
-const BRICKS = 60;
+const BRICKS = 10;
 
 if (typeof window !== 'undefined') {
     var $debugPane = $("#debug");
@@ -178,9 +178,11 @@ export default class Dominos extends Game {
                 this.createObjects();
             }
 
+            console.log("reset");
             this.reset(update.states);
-		} else if (update.name == "INIT" || update.name == "RESET_CLOCK") {
+		} else if (update.name == "INIT_TICK") {
 			if (!this.queue.isHost) {
+                console.log("sending");
                 //this.engine.clientInterface.clear();
 				this.queue.push({name: "INIT_WORLD"}, true);
 			}

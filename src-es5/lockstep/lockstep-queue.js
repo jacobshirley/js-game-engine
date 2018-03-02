@@ -130,14 +130,16 @@ class LockstepUpdateQueue extends _streamUpdateQueue2.default {
 
   handleUpdates(frame) {
     while (this.updates.length > 0) {
-      let u = this.updates.shift();
-
-      for (let processor of this.processors) {
-        processor.process(u);
-      }
-
-      this.processedUpdates++;
+      this.processUpdate(this.updates.shift());
     }
+  }
+
+  processUpdate(u) {
+    for (let processor of this.processors) {
+      processor.process(u);
+    }
+
+    this.processedUpdates++;
   }
 
   update(frame) {

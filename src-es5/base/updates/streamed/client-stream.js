@@ -21,10 +21,6 @@ class ClientUpdateStream extends _client2.default {
     this.updates = [];
     this._cachedUpdates = [];
   }
-  /*updates() {
-  	return this.updates;
-  }*/
-
 
   push(update) {
     this.updates.push(update);
@@ -47,6 +43,12 @@ class ClientUpdateStream extends _client2.default {
     return new _iteration2.default(this.updates, false);
   }
 
+  export() {
+    let ex = super.export();
+    ex.updates = this.updates;
+    return ex;
+  }
+
 }
 
 exports.ClientUpdateStream = ClientUpdateStream;
@@ -59,11 +61,13 @@ class LocalClientUpdateStream extends ClientUpdateStream {
     this.toBeSent = [];
     this.toBeFramed = [];
     this.toBeFramedNet = [];
+    this.updateID = 0;
   }
 
   push(update, networked) {
     if (networked) {
       super.push(update);
+      update.__updateId = this.updateID++;
       this.toBeSent.push(update);
     } else {
       this.localUpdates.push(update);

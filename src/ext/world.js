@@ -7,6 +7,7 @@ export default class World {
         this.objects = [];
         this.stateManagers = [physics];
 
+        this.components = [];
         this.renderTimer = engine.renderTimer;
         this.queue = engine.queue;
         this.renderer = renderer;

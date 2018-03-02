@@ -23,7 +23,6 @@ function run() {
     clientInterface: new _clientHandler2.default(8080, MAX_CLIENTS),
     headless: true,
     server: true,
-    maxFPS: 60,
     sendOnFrame: 1,
     port: 8080
   };

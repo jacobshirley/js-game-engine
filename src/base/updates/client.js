@@ -23,6 +23,10 @@ export default class Client {
 		this._id = value;
 		return this._id;
 	}
+
+	export() {
+		return {id: this._id, isHost: this._isHost};
+	}
 }
 
 export class ClientList {
@@ -116,7 +120,7 @@ export class ClientList {
         let it = this.iterator();
 		while (it.hasNext()) {
 			let cl = it.remove();
-            clients.push({id: cl.id(), isHost: cl.host()});
+            clients.push(cl.export());
         }
         return clients;
     }

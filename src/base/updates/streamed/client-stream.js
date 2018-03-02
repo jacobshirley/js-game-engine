@@ -10,10 +10,6 @@ export class ClientUpdateStream extends Client {
 		this._cachedUpdates = [];
 	}
 
-	/*updates() {
-		return this.updates;
-	}*/
-
 	push(update) {
 		this.updates.push(update);
 	}
@@ -34,6 +30,12 @@ export class ClientUpdateStream extends Client {
 	iterator() {
 		return new BasicIterator(this.updates, false);
 	}
+
+	export() {
+		let ex = super.export();
+		ex.updates = this.updates;
+		return ex;
+	}
 }
 
 export class LocalClientUpdateStream extends ClientUpdateStream {
@@ -45,11 +47,14 @@ export class LocalClientUpdateStream extends ClientUpdateStream {
 		this.toBeSent = [];
 		this.toBeFramed = [];
 		this.toBeFramedNet = [];
+
+		this.updateID = 0;
 	}
 
 	push(update, networked) {
 		if (networked) {
 			super.push(update);
+			update.__updateId = this.updateID++;
 			this.toBeSent.push(update);
 		} else {
 			this.localUpdates.push(update);

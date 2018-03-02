@@ -58,9 +58,9 @@ class LockstepEngine {
 
   _build() {
     this.queue = new _lockstepQueue2.default(this.clientInterface.getLocalClient(), this.clientInterface.getClients());
-    this.logicTimer = new _lockstepTimer2.default(this.queue, 5, 2, 50);
-    this.queue.addProcessor(this.logicTimer);
-    this.renderTimer = new _gameTimer2.default(this.logicTimer);
+    this.renderTimer = new _lockstepTimer2.default(this.queue, 5, 2, 20);
+    this.logicTimer = this.renderTimer.logicTimer;
+    this.queue.addProcessor(this.renderTimer);
     this.controllers = new _controllers2.default(this.queue);
 
     if (!this.config.headless) {
@@ -101,12 +101,11 @@ class LockstepEngine {
 
   start() {
     if (typeof window !== 'undefined') {
-      setInterval(() => {
-        if (document.visibilityState === "hidden") {
-          this.update();
-        }
-      }, 1000 / 128);
-
+      /*setInterval(() => {
+          if (document.visibilityState === "hidden") {
+              this.update();
+          }
+      }, 1000 / 128);*/
       this._start();
     }
   }

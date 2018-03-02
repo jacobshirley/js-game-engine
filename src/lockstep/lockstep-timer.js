@@ -1,29 +1,34 @@
-import Timer from "../base/timing/timer.js";
+import GameTimer from "../base/timing/game-timer.js";
 import Interval from "../base/timing/interval.js";
 import Delay from "../base/timing/delay.js";
 import LockstepQueueError from "./lockstep-queue-error.js";
 
-export default class LockstepTimer extends Timer {
-	constructor(client, delay, minDelay = 5, maxDelay = 50, syncInterval = 5) {
+export default class LockstepTimer extends GameTimer {
+	constructor(client, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 50, syncInterval = 5) {
 		super();
 
-		this.init = false;
 		this.client = client;
 		this.delay = delay;
 		this.minDelay = minDelay;
 		this.maxDelay = maxDelay;
+		this.resetDelay = resetDelay;
 		this.syncInterval = syncInterval;
+		this._inited = false;
 		this._resetTick = 0;
+		this._requestedReset = false;
+		this._minUpdates = 0;
 
 		if (this.client.isHost) {
-			let interval = new Interval(syncInterval, true);
+			let interval = new Interval(this.syncInterval, true);
 
 			interval.on('complete', () => {
-				this.client.push({name: "HOST_TICK", tick: this.tick, time: this.time}, true);
+				this.client.push({name: "HOST_TICK", tick: this.logicTimer.tick, time: this.logicTimer.time}, true);
 			});
 
-			this.addInterval(interval);
+			this.logicTimer.addInterval(interval);
 		}
+
+		this.setMaxCatchup(10);
 	}
 
 	update(main) {
@@ -39,42 +44,51 @@ export default class LockstepTimer extends Timer {
 
 	process(update) {
 		if (this.client.isHost) {
-			if (update.name == "CLIENT_ADDED") {
-				//console.log("client added");
-				this.client.push({name: "INIT_TICK", tick: this.tick, time: this.time}, true);
+			if (update.name == "CLIENT_ADDED" || update.name == "REQUEST_RESET") {
+				this.client.push({name: "INIT_TICK", target: update.id || update.__clId, tick: this.logicTimer.tick}, true);
 			}
 
 			return;
 		}
 
 		if (update.name == "HOST_TICK") {
-			if (!this.init)
+			if (!this._inited)
 				return;
 
-			let diff = update.tick - this.tick;
+			let diff = update.tick - this.logicTimer.tick;
+			console.log(diff);
 
-			if (this._resetTick < update.tick && (diff <= this.minDelay)) {
-				console.log("Delaying " + diff);
-
-				this._resetTick += this.delay;
-				this.addDelay(new Delay(this.delay, true));
-			} else if (diff > this.maxDelay) {
-				//this.tick = update.tick - this.maxDelay;
-				//this.time = update.time;
-
-				//this.client.push({name: "RESET_CLOCK"}, false);
+			if (!this._requestedReset && this._resetTick < update.tick) {
+				if (diff >= 0 && diff <= this.minDelay) {
+					//console.log("SDFFD");
+					this._resetTick += this.delay;
+					this.logicTimer.addDelay(new Delay(this.delay, true));
+				} else if (diff < 0 || diff >= this.resetDelay) {
+					this._requestedReset = true;
+				//	console.log(update.__updateId+", "+this.logicTimer.tick+", "+diff+", " + this._resetTick);
+					this.client.push({name: "REQUEST_RESET"}, true);
+				} else if (diff > this.maxDelay) {
+					//console.log(diff);
+					this.updateTime = this.logicInterval * (Math.max(0, diff - this.delay));
+				}
 			}
-		} else if (update.name == "INIT_TICK") {
-			if (this.init)
-				return;
+		} else if (update.name == "INIT_TICK" && update.target == this.client.local.id()) {
+			this._requestedReset = false;
 
-			this.tick = update.tick - 1;
-			this.time = update.time;
+			this.logicTimer.tick = update.tick - 1;
+			this._resetTick = update.tick + this.delay;
 
-			this._resetTick = this.tick + this.delay;
+			this.updateTime = 0;
+			this.deltaTime = this.logicInterval;
+
+			//console.log(update.__updateId +" init tick");
+			//console.log(this.client.clients);
+		//	console.log("yay");
 			this.addDelay(new Delay(this.delay, true));
 
-			this.init = true;
+			this._inited = true;
+		} else if (update.name == "RESET_CLOCK") {
+
 		}
 	}
 }
