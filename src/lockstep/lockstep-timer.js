@@ -33,15 +33,15 @@ export default class LockstepTimer extends GameTimer {
 	}
 
 	update(main) {
-		//try {
+		try {
 			return super.update(main);
-		/*} catch (e) {
+		} catch (e) {
 			if (e instanceof LockstepQueueError) {
 				console.log("LockstepError: Delaying");
 				this.addDelay(new Delay(this.delay, true));
 			} else
 				throw e;
-		}*/
+		}
 	}
 
 	process(update) {
@@ -88,6 +88,8 @@ export default class LockstepTimer extends GameTimer {
 			this.addDelay(new Delay(this.delay, true));
 
 			this._inited = true;
+
+			this.queue.push({name: "SET_CLOCK"});
 		} else if (update.name == "RESET_CLOCK") {
 
 		}

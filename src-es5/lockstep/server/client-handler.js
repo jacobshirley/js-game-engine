@@ -67,6 +67,7 @@ class ClientHandler extends _lockstepClientInterface2.default {
           name: "DISCONNECTED",
           id: cl.id()
         });
+        cl.toBeRemoved = true;
         this.emit("disconnection", cl);
       });
     });
@@ -140,7 +141,10 @@ class ClientHandler extends _lockstepClientInterface2.default {
             client.send(clUpdates);
           } else {
             //this.clients.remove(client.id());
-            if (client.updates.length == 0) this.clients.remove(client.id()); //console.log("Client error: " + e.message + " -> Removing client");
+            if (client.toBeRemoved && client.updates.length == 0) {
+              this.clients.remove(client.id());
+            } //console.log("Client error: " + e.message + " -> Removing client");
+
           }
         }
       }

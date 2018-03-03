@@ -53,15 +53,14 @@ class LockstepTimer extends _gameTimer2.default {
   }
 
   update(main) {
-    //try {
-    return super.update(main);
-    /*} catch (e) {
-    	if (e instanceof LockstepQueueError) {
-    		console.log("LockstepError: Delaying");
-    		this.addDelay(new Delay(this.delay, true));
-    	} else
-    		throw e;
-    }*/
+    try {
+      return super.update(main);
+    } catch (e) {
+      if (e instanceof _lockstepQueueError2.default) {
+        console.log("LockstepError: Delaying");
+        this.addDelay(new _delay2.default(this.delay, true));
+      } else throw e;
+    }
   }
 
   process(update) {
@@ -103,6 +102,9 @@ class LockstepTimer extends _gameTimer2.default {
       this.deltaTime = this.logicInterval;
       this.addDelay(new _delay2.default(this.delay, true));
       this._inited = true;
+      this.queue.push({
+        name: "SET_CLOCK"
+      });
     } else if (update.name == "RESET_CLOCK") {}
   }
 

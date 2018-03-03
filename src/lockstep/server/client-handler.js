@@ -38,6 +38,8 @@ export default class ClientHandler extends LockstepClientInterface {
                 this.packets.push(encode(false, cl.id(), [{name: "DISCONNECTED", id: cl.id()}]))
                 cl.push({name: "DISCONNECTED", id: cl.id()});
 
+                cl.toBeRemoved = true;
+
                 this.emit("disconnection", cl);
          	});
         });
@@ -100,8 +102,9 @@ export default class ClientHandler extends LockstepClientInterface {
                         client.send(clUpdates);
                     } else {
                         //this.clients.remove(client.id());
-                        if (client.updates.length == 0)
+                        if (client.toBeRemoved && client.updates.length == 0) {
                             this.clients.remove(client.id());
+                        }
                         //console.log("Client error: " + e.message + " -> Removing client");
                     }
                 }

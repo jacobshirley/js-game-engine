@@ -222,7 +222,7 @@ export default class Dominos extends Game {
                 console.log("reset");
                 this.reset(update.states);
             }
-		} else if (update.name == "INIT_TICK") {
+		} else if (update.name == "SET_CLOCK") {
 			if (!this.queue.isHost) {
                 //this.engine.clientInterface.clear();
 				this.queue.push({name: "INIT_WORLD"}, true);
