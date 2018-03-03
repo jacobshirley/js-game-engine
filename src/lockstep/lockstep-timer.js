@@ -4,7 +4,7 @@ import Delay from "../base/timing/delay.js";
 import LockstepQueueError from "./lockstep-queue-error.js";
 
 export default class LockstepTimer extends GameTimer {
-	constructor(engine, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 5000, syncInterval = 50) {
+	constructor(engine, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 5000, syncInterval = 5) {
 		super();
 
 		this.engine = engine;
@@ -33,20 +33,23 @@ export default class LockstepTimer extends GameTimer {
 	}
 
 	update(main) {
-		try {
+		//try {
 			return super.update(main);
-		} catch (e) {
+		/*} catch (e) {
 			if (e instanceof LockstepQueueError) {
 				console.log("LockstepError: Delaying");
 				this.addDelay(new Delay(this.delay, true));
-			} else throw e;
-		}
+			} else
+				throw e;
+		}*/
 	}
 
 	process(update) {
 		if (this.queue.isHost) {
 			if (update.name == "CLIENT_ADDED" || update.name == "REQUEST_RESET") {
 				this.queue.push({name: "INIT_TICK", target: update.id || update.__clId, tick: this.logicTimer.tick}, true);
+			} else if (update.name == "REFRESH_NET") {
+			//	this.queue.push({name: "RESET_MAGIC", })
 			}
 
 			return;
@@ -57,7 +60,7 @@ export default class LockstepTimer extends GameTimer {
 				return;
 
 			let diff = update.tick - this.logicTimer.tick;
-			console.log(diff);
+			//console.log(diff);
 
 			if (!this._requestedReset && this._resetTick < update.tick) {
 				if (diff >= 0 && diff <= this.minDelay) {
@@ -66,6 +69,8 @@ export default class LockstepTimer extends GameTimer {
 				} else if (diff < 0 || diff >= this.resetDelay) {
 					this._requestedReset = true;
 
+					//this.clientInterface.clear();
+				//	this.client.push({name: "REFRESH_NET"}, true);
 					this.engine.restart();
 				} else if (diff > this.maxDelay) {
 					this.updateTime = this.logicInterval * (Math.max(0, diff - this.delay));

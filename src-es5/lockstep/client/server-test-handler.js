@@ -24,6 +24,10 @@ class ServerTestHandler extends _lockstepClientInterface2.default {
     this.clients.push(this.local);
     this.clients.setHost(0);
     this.connected = true;
+  }
+
+  reset() {
+    this.clear();
     this.emit("connected", this.local);
   }
 

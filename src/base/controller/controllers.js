@@ -11,6 +11,16 @@ export default class Controllers {
     }
 
     remove(controller) {
-        //to do
+        controller.destroy();
+
+        this.cont.splice(this.cont.indexOf(controller), 1);
+    }
+
+    destroy() {
+        for (let c of this.cont) {
+            c.destroy();
+        }
+
+        this.cont = [];
     }
 }

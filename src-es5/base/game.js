@@ -22,6 +22,8 @@ class Game {
 
   destroy() {}
 
+  reset() {}
+
   logic() {}
 
   render() {}

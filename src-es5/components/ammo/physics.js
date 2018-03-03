@@ -10,11 +10,10 @@ var _ammo2 = _interopRequireDefault(_ammo);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-let _trans3 = new _ammo2.default.btTransform();
-
 class Physics {
   constructor() {
     this.dynamicsWorld = null;
+    this.shapes = [];
     this.objects = [];
     this.constraints = [];
   }
@@ -30,20 +29,27 @@ class Physics {
   }
 
   destroy() {
+    this.removeAll(true);
+
     _ammo2.default.destroy(this.collisionConfiguration);
+
+    this.collisionConfiguration = null;
 
     _ammo2.default.destroy(this.dispatcher);
 
+    this.dispatcher = null;
+
     _ammo2.default.destroy(this.overlappingPairCache);
+
+    this.overlappingPairCache = null;
 
     _ammo2.default.destroy(this.solver);
 
+    this.solver = null;
+
     _ammo2.default.destroy(this.dynamicsWorld);
 
-    this.objects.forEach(function (obj) {
-      _ammo2.default.destroy(obj);
-    });
-    this.objects = [];
+    this.dynamicsWorld = null;
   }
 
   setGravity(grav) {
@@ -55,16 +61,11 @@ class Physics {
   }
 
   reset() {
-    this.removeAll(true);
     this.destroy();
     this.init();
   }
 
   createBlock(def) {
-    return Physics.createBlock(def);
-  }
-
-  static createBlock(def) {
     let size = def.size || {
       width: 0,
       height: 0,
@@ -84,12 +85,23 @@ class Physics {
     let mass = def.mass || 0;
     let damping = def.damping || 0.9;
     let friction = def.friction || 0.5;
-    let size2 = new _ammo2.default.btVector3(size.width, size.height, size.length);
-    let sideShape = new _ammo2.default.btBoxShape(size2);
-    sideShape.setMargin(margin);
+    let sideShape = def.shape;
+
+    if (typeof sideShape == "undefined") {
+      let size2 = new _ammo2.default.btVector3(size.width, size.height, size.length);
+      sideShape = new _ammo2.default.btBoxShape(size2);
+      sideShape.setMargin(margin); //    Ammo.destroy(size2);
+    }
+
+    if (this.shapes.indexOf(sideShape) == -1) {
+      this.shapes.push(sideShape);
+    }
+
     let sideTransform = new _ammo2.default.btTransform();
     sideTransform.setIdentity();
-    sideTransform.setOrigin(new _ammo2.default.btVector3(position.x, position.y, position.z));
+    let v = new _ammo2.default.btVector3(position.x, position.y, position.z);
+    sideTransform.setOrigin(v); //Ammo.destroy(v);
+
     let quat = new _ammo2.default.btQuaternion();
     quat.setEulerZYX(rotation.z, rotation.y, rotation.x);
     sideTransform.setRotation(quat);
@@ -98,7 +110,13 @@ class Physics {
     if (isDynamic) sideShape.calculateLocalInertia(mass, localInertia);
     let myMotionState = new _ammo2.default.btDefaultMotionState(sideTransform);
     let rbInfo = new _ammo2.default.btRigidBodyConstructionInfo(mass, myMotionState, sideShape, localInertia);
-    let body = new _ammo2.default.btRigidBody(rbInfo);
+    let body = new _ammo2.default.btRigidBody(rbInfo); //Ammo.destroy()
+    //Ammo.destroy(quat);
+    //Ammo.destroy(localInertia);
+    //Ammo.destroy(rbInfo);
+    //Ammo.destroy(sideTransform);
+    //Ammo.destroy(body);
+
     body.setDamping(0, damping);
     body.setFriction(friction);
     body.setActivationState(4);
@@ -193,11 +211,22 @@ class Physics {
   }
 
   removeAll(destroy) {
+    while (this.shapes.length > 0) {
+      _ammo2.default.destroy(this.shapes.shift());
+    }
+
     let world = this.dynamicsWorld;
 
     for (let obj of this.objects) {
+      if (destroy) {
+        _ammo2.default.destroy(obj.getMotionState());
+      }
+
       world.removeRigidBody(obj);
-      if (destroy) _ammo2.default.destroy(obj);
+
+      if (destroy) {
+        _ammo2.default.destroy(obj);
+      }
     }
 
     for (let obj of this.constraints) {
@@ -214,30 +243,28 @@ class Physics {
     let lVel = state.lVel;
     let pos = state.pos;
     let rot = state.rot;
-    _trans3 = body.getWorldTransform();
-
-    _trans3.setOrigin(new _ammo2.default.btVector3(pos.x, pos.y, pos.z));
+    let trans = body.getWorldTransform();
+    let o = new _ammo2.default.btVector3(pos.x, pos.y, pos.z);
+    trans.setOrigin(o); //Ammo.destory(o);
 
     let rows = rot;
     let matrix = new _ammo2.default.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z, rows[1].x, rows[1].y, rows[1].z, rows[2].x, rows[2].y, rows[2].z);
+    trans.setBasis(matrix); //Ammo.destroy(matrix);
 
-    _trans3.setBasis(matrix);
-
-    body.setAngularVelocity(new _ammo2.default.btVector3(aVel.x, aVel.y, aVel.z));
-    body.setLinearVelocity(new _ammo2.default.btVector3(lVel.x, lVel.y, lVel.z));
+    let v = new _ammo2.default.btVector3(aVel.x, aVel.y, aVel.z);
+    let lv = new _ammo2.default.btVector3(lVel.x, lVel.y, lVel.z);
+    body.setAngularVelocity(v);
+    body.setLinearVelocity(lv); //    Ammo.destroy(v);
+    //    Ammo.destroy(lv);
   }
 
   getObjectState(body) {
     let aVel = body.getAngularVelocity();
     let lVel = body.getLinearVelocity();
-    _trans3 = body.getWorldTransform();
-
-    let origin = _trans3.getOrigin();
-
-    let rotation = _trans3.getRotation();
-
-    let basis = _trans3.getBasis();
-
+    let trans = body.getWorldTransform();
+    let origin = trans.getOrigin();
+    let rotation = trans.getRotation();
+    let basis = trans.getBasis();
     let rows = [];
 
     for (let i = 0; i < 3; i++) {

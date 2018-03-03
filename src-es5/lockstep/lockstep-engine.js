@@ -24,21 +24,22 @@ var _controllers = require("../base/controller/controllers.js");
 
 var _controllers2 = _interopRequireDefault(_controllers);
 
+var _events = require("../base/shims/events.js");
+
+var _events2 = _interopRequireDefault(_events);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class LockstepEngine {
+class LockstepEngine extends _events2.default {
   constructor(game, config) {
+    super();
     this.game = game;
     this.config = config;
     this.clientInterface = config.clientInterface;
-
-    if (this.clientInterface.connected) {
+    if (this.clientInterface.connected) this._build();
+    this.clientInterface.on("connected", () => {
       this._build();
-    } else {
-      this.clientInterface.on("connected", () => {
-        this._build();
-      });
-    }
+    });
   }
 
   get isServer() {
@@ -47,7 +48,7 @@ class LockstepEngine {
 
   _build() {
     this.queue = new _lockstepQueue2.default(this.clientInterface.getLocalClient(), this.clientInterface.getClients());
-    this.renderTimer = new _lockstepTimer2.default(this, 4, 2, 7, 1000);
+    this.renderTimer = new _lockstepTimer2.default(this, 7, 2, 10, 20);
     this.logicTimer = this.renderTimer.logicTimer;
     this.queue.addProcessor(this.renderTimer);
     this.controllers = new _controllers2.default(this.queue);
@@ -55,9 +56,12 @@ class LockstepEngine {
     if (!this.config.headless) {
       this.renderTimer.setRenderFunction(() => {
         this.game.render();
+        if (this.shouldRestart) this._restart();
       });
     } else {
-      this.renderTimer.setRenderFunction(() => {});
+      this.renderTimer.setRenderFunction(() => {
+        if (this.shouldRestart) this._restart();
+      });
     }
 
     this.renderTimer.setLogicFunction(frame => {
@@ -81,7 +85,7 @@ class LockstepEngine {
   }
 
   update() {
-    if (this.clientInterface.connected) {
+    if (this.clientInterface.connected && this.renderTimer) {
       this.renderTimer.render();
     } else {
       this.clientInterface.update();
@@ -101,11 +105,20 @@ class LockstepEngine {
   }
 
   restart() {
+    this.shouldRestart = true;
+  }
+
+  _restart() {
+    this.shouldRestart = false;
     this.renderTimer.reset();
     this.logicTimer.reset();
-    this.clientInterface.clear();
-    this.clientInterface.reconnect();
-    this.game.destroy();
+    this.renderTimer = null;
+    this.logicTimer = null;
+    this.emit("restart", this);
+    this.controllers.destroy();
+    this.game.destroy(); //this.game.restart();
+
+    this.clientInterface.reset();
   }
 
 }

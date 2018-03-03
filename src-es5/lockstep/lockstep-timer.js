@@ -23,7 +23,7 @@ var _lockstepQueueError2 = _interopRequireDefault(_lockstepQueueError);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class LockstepTimer extends _gameTimer2.default {
-  constructor(engine, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 5000, syncInterval = 50) {
+  constructor(engine, delay = 5, minDelay = 2, maxDelay = 10, resetDelay = 5000, syncInterval = 5) {
     super();
     this.engine = engine;
     this.queue = engine.queue;
@@ -53,14 +53,15 @@ class LockstepTimer extends _gameTimer2.default {
   }
 
   update(main) {
-    try {
-      return super.update(main);
-    } catch (e) {
-      if (e instanceof _lockstepQueueError2.default) {
-        console.log("LockstepError: Delaying");
-        this.addDelay(new _delay2.default(this.delay, true));
-      } else throw e;
-    }
+    //try {
+    return super.update(main);
+    /*} catch (e) {
+    	if (e instanceof LockstepQueueError) {
+    		console.log("LockstepError: Delaying");
+    		this.addDelay(new Delay(this.delay, true));
+    	} else
+    		throw e;
+    }*/
   }
 
   process(update) {
@@ -71,6 +72,7 @@ class LockstepTimer extends _gameTimer2.default {
           target: update.id || update.__clId,
           tick: this.logicTimer.tick
         }, true);
+      } else if (update.name == "REFRESH_NET") {//	this.queue.push({name: "RESET_MAGIC", })
       }
 
       return;
@@ -78,15 +80,16 @@ class LockstepTimer extends _gameTimer2.default {
 
     if (update.name == "HOST_TICK") {
       if (!this._inited) return;
-      let diff = update.tick - this.logicTimer.tick;
-      console.log(diff);
+      let diff = update.tick - this.logicTimer.tick; //console.log(diff);
 
       if (!this._requestedReset && this._resetTick < update.tick) {
         if (diff >= 0 && diff <= this.minDelay) {
           this._resetTick += this.delay;
           this.logicTimer.addDelay(new _delay2.default(this.delay, true));
         } else if (diff < 0 || diff >= this.resetDelay) {
-          this._requestedReset = true;
+          this._requestedReset = true; //this.clientInterface.clear();
+          //	this.client.push({name: "REFRESH_NET"}, true);
+
           this.engine.restart();
         } else if (diff > this.maxDelay) {
           this.updateTime = this.logicInterval * Math.max(0, diff - this.delay);

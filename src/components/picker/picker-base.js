@@ -44,13 +44,16 @@ export default class PickerBase extends UpdateProcessor {
             let body = this.physics.objects[update.index];
             let pos = update.data;
 
+
             this.handles[update.__clId] = Physics.createConstraint({type:"point2point", body1: body, position: pos});
             this.physics.addObject(this.handles[update.__clId]);
         } else if (update.name == "PICKER_DRAG") {
             this.us++;
 
-            let intersection = update.data;
-            this.handles[update.__clId].setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
+            if (this.handles[update.__clId] != null) {
+                let intersection = update.data;
+                this.handles[update.__clId].setPivotB(new Ammo.btVector3(intersection.x, intersection.y, intersection.z));
+            }
         } else if (update.name == "PICKER_STOP_DRAG") {
             this.us++;
 
@@ -60,6 +63,15 @@ export default class PickerBase extends UpdateProcessor {
             Ammo.destroy(handle);
 
             this.handles[update.__clId] = null;
+        } else if (update.name == "DISCONNECTED") {
+            if (this.handles[update.__clId]) {
+                let handle = this.handles[update.__clId];
+
+                this.physics.removeObject(handle);
+                Ammo.destroy(handle);
+
+                this.handles[update.__clId] = null;
+            }
         }
     }
 }

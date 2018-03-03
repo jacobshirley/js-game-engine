@@ -1,16 +1,17 @@
-import Physics from "./ext/ammo/physics.js";
-import GameObject from "./ext/game-object.js";
+import Ammo from "./components/ammo/ammo.js";
+import Physics from "./components/ammo/physics.js";
+import GameObject from "./components/game-object.js";
 import Game from "./base/game.js";
 
-import World from "./ext/world.js";
-import Picker from "./ext/picker/picker.js";
-import PickerBase from "./ext/picker/picker-base.js";
+import World from "./components/world.js";
+import Picker from "./components/picker/picker.js";
+import PickerBase from "./components/picker/picker-base.js";
 
 import MouseController from "./base/controller/mouse.js";
 
-import ThreeRenderer from "./ext/rendering/three/renderer.js";
+import ThreeRenderer from "./components/rendering/three/renderer.js";
 
-const BRICKS = 10;
+const BRICKS = 60;
 
 if (typeof window !== 'undefined') {
     var $debugPane = $("#debug");
@@ -24,11 +25,23 @@ export default class Dominos extends Game {
     constructor(config) {
         super(config);
 
+        this.inited = false;
+
         if (!this.config.headless) {
             this.renderer = new ThreeRenderer(document.body);
             this.initRenderer();
         }
-        this.inited = false;
+
+        if (typeof window != 'undefined') {
+            $(document).keypress((e) => {
+                if (e.key != "a")
+                    return;
+
+                console.log("requesting reset");
+                //this.engine.restart();
+                this.queue.push({name: "RESET22"});
+            });
+        }
     }
 
     initRenderer() {
@@ -65,16 +78,27 @@ export default class Dominos extends Game {
         });
     }
 
+    createShapes() {
+        let size = new Ammo.btVector3(50, 1, 50);
+        this.floorShape = new Ammo.btBoxShape(size);
+        this.floorShape.setMargin(0.04);
+
+        size = new Ammo.btVector3(1 / 3, 1, 0.15);
+        this.pieceShape = new Ammo.btBoxShape(size);
+        this.pieceShape.setMargin(0.04);
+    }
+
     reset(state) {
         this.physics.reset();
+        this.createShapes();
         this.createObjects(this.config.headless, state);
-
         this.world.setWorldState(state);
         this.world.update();
     }
 
     createPiece(position, rotation, useRenderer) {
         var props = {size: {width: 1 / 3, height: 1, length: 0.15},
+                     shape: this.pieceShape,
                      color: 0xFFD737,
                      mass: 50,
                      friction: 2,
@@ -84,7 +108,7 @@ export default class Dominos extends Game {
         props.position = position;
         props.rotation = rotation;
 
-        let phys = Physics.createBlock(props);
+        let phys = this.physics.createBlock(props);
 
         if (useRenderer) {
             var rend = this.renderer.createCube(props);
@@ -97,12 +121,13 @@ export default class Dominos extends Game {
         var props2 = {size: {width: 50, height: 1, length: 50},
                       position: {x: 0, y: -1, z: 0},
                       mass: 0,
+                      shape: this.floorShape,
                       material: headless ? undefined : new THREE.MeshPhongMaterial({color: 0x136CCC}),
                       friction: 1,
                       cashShadow: true,
                       receiveShadow: true};
 
-        let floor = new GameObject(Physics.createBlock(props2), headless ? undefined : this.renderer.createCube(props2));
+        let floor = new GameObject(this.physics.createBlock(props2), headless ? undefined : this.renderer.createCube(props2));
         if (states) {
             this.world.objects[0].physicsObj = floor.physicsObj;
             this.physics.addObject(floor.physicsObj);
@@ -166,30 +191,39 @@ export default class Dominos extends Game {
         this.queue.addProcessor(this.picker);
         this.queue.addProcessor(this);
 
+        //Ammo.destroy(size);
+
+        this.createShapes();
         if (this.isServer) {
             this.createObjects(this.config.headless);
         }
     }
 
-    destroy() {
+    restart() {
+        //this.inited = false;
+        console.log("restarting");
         this.physics.reset();
-        this.renderer.destroy();
+        this.createShapes();
+        this.createObjects(this.config.headless, true);
+    }
+
+    destroy() {
         this.inited = false;
-        //this.world.destroy();
+        this.world.destroy();
     }
 
     process(update) {
 		if (update.name == "CREATE_WORLD") {
             if (!this.isServer && !this.inited) {
                 this.inited = true;
-                this.createObjects();
+                this.createObjects(this.config.headless);
+                this.world.setWorldState(update.states);
+            } else {
+                console.log("reset");
+                this.reset(update.states);
             }
-
-            console.log("reset");
-            this.reset(update.states);
 		} else if (update.name == "INIT_TICK") {
 			if (!this.queue.isHost) {
-                console.log("sending");
                 //this.engine.clientInterface.clear();
 				this.queue.push({name: "INIT_WORLD"}, true);
 			}
@@ -199,8 +233,9 @@ export default class Dominos extends Game {
 
 				this.queue.pushFramed({name: "CREATE_WORLD", states}, true);
 			}
-		} else if (update.name == "RESET") {
-            this.reset(this.world.getWorldState());
+		} else if (update.name == "RESET22") {
+            console.log("Reset22");
+            this.engine.restart();
         }
 	}
 

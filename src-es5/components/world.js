@@ -22,12 +22,14 @@ class World {
     this.queue = engine.queue;
     this.renderer = renderer;
     this.physics = physics;
+    /*this.engine.on("restart", () => {
+      });*/
   }
 
   destroy() {
-    this.objects = [];
     this.physics.destroy();
     this.renderer.destroy();
+    this.objects = [];
   }
 
   getWorldState() {
@@ -77,6 +79,7 @@ class World {
   }
 
   render() {
+    //console.log(this.objects.length);
     for (let obj of this.objects) {
       let body = obj.physicsObj;
       let mesh = obj.renderObj;

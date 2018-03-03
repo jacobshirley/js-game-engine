@@ -1,11 +1,10 @@
 import Ammo from "./ammo.js";
 
-let _trans3 = new Ammo.btTransform();
-
 export default class Physics {
     constructor() {
         this.dynamicsWorld = null;
 
+        this.shapes = [];
         this.objects = [];
         this.constraints = [];
     }
@@ -15,23 +14,23 @@ export default class Physics {
         this.dispatcher = new Ammo.btCollisionDispatcher(this.collisionConfiguration);
         this.overlappingPairCache = new Ammo.btDbvtBroadphase();
         this.solver = new Ammo.btSequentialImpulseConstraintSolver();
-
         this.dynamicsWorld = new Ammo.btDiscreteDynamicsWorld(this.dispatcher, this.overlappingPairCache, this.solver, this.collisionConfiguration);
         this.dynamicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
     }
 
     destroy() {
+        this.removeAll(true);
+
     	Ammo.destroy(this.collisionConfiguration);
+        this.collisionConfiguration = null;
         Ammo.destroy(this.dispatcher);
+        this.dispatcher = null;
         Ammo.destroy(this.overlappingPairCache);
+        this.overlappingPairCache = null;
         Ammo.destroy(this.solver);
+        this.solver = null;
         Ammo.destroy(this.dynamicsWorld);
-
-        this.objects.forEach(function(obj) {
-        	Ammo.destroy(obj);
-        });
-
-        this.objects = [];
+        this.dynamicsWorld = null;
     }
 
     setGravity(grav) {
@@ -43,16 +42,11 @@ export default class Physics {
     }
 
     reset() {
-        this.removeAll(true);
         this.destroy();
         this.init();
     }
 
     createBlock(def) {
-        return Physics.createBlock(def);
-    }
-
-    static createBlock(def) {
         let size = def.size||{width:0, height:0, length:0};
         let position = def.position||{x: 0, y: 0, z: 0};
         let rotation = def.rotation||{x: 0, y: 0, z: 0};
@@ -60,14 +54,25 @@ export default class Physics {
         let mass = def.mass||0;
         let damping = def.damping||0.9;
         let friction = def.friction||0.5;
+        let sideShape = def.shape;
 
-        let size2 = new Ammo.btVector3(size.width, size.height, size.length);
-        let sideShape = new Ammo.btBoxShape(size2);
-        sideShape.setMargin(margin);
+        if (typeof sideShape == "undefined") {
+            let size2 = new Ammo.btVector3(size.width, size.height, size.length);
+            sideShape = new Ammo.btBoxShape(size2);
+            sideShape.setMargin(margin);
+
+        //    Ammo.destroy(size2);
+        }
+
+        if (this.shapes.indexOf(sideShape) == -1) {
+            this.shapes.push(sideShape);
+        }
 
         let sideTransform = new Ammo.btTransform();
         sideTransform.setIdentity();
-        sideTransform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+        let v = new Ammo.btVector3(position.x, position.y, position.z);
+        sideTransform.setOrigin(v);
+        //Ammo.destroy(v);
 
         let quat = new Ammo.btQuaternion();
         quat.setEulerZYX(rotation.z, rotation.y, rotation.x);
@@ -82,6 +87,13 @@ export default class Physics {
         let myMotionState = new Ammo.btDefaultMotionState(sideTransform);
         let rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, sideShape, localInertia);
         let body = new Ammo.btRigidBody(rbInfo);
+
+        //Ammo.destroy()
+        //Ammo.destroy(quat);
+        //Ammo.destroy(localInertia);
+        //Ammo.destroy(rbInfo);
+        //Ammo.destroy(sideTransform);
+        //Ammo.destroy(body);
 
         body.setDamping(0, damping);
         body.setFriction(friction);
@@ -182,11 +194,19 @@ export default class Physics {
     }
 
     removeAll(destroy) {
+        while (this.shapes.length > 0) {
+            Ammo.destroy(this.shapes.shift());
+        }
+
         let world = this.dynamicsWorld;
         for (let obj of this.objects) {
+            if (destroy) {
+                Ammo.destroy(obj.getMotionState());
+            }
             world.removeRigidBody(obj);
-            if (destroy)
+            if (destroy) {
                 Ammo.destroy(obj);
+            }
         }
 
         for (let obj of this.constraints) {
@@ -206,30 +226,39 @@ export default class Physics {
         let pos = state.pos;
         let rot = state.rot;
 
-        _trans3 = body.getWorldTransform();
-        _trans3.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+        let trans = body.getWorldTransform();
+        let o = new Ammo.btVector3(pos.x, pos.y, pos.z);
+        trans.setOrigin(o);
+        //Ammo.destory(o);
 
         let rows = rot;
         let matrix = new Ammo.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z,
                                           rows[1].x, rows[1].y, rows[1].z,
                                           rows[2].x, rows[2].y, rows[2].z);
 
-        _trans3.setBasis(matrix);
+        trans.setBasis(matrix);
 
-        body.setAngularVelocity(new Ammo.btVector3(aVel.x, aVel.y, aVel.z));
-        body.setLinearVelocity(new Ammo.btVector3(lVel.x, lVel.y, lVel.z));
+        //Ammo.destroy(matrix);
+
+        let v = new Ammo.btVector3(aVel.x, aVel.y, aVel.z);
+        let lv = new Ammo.btVector3(lVel.x, lVel.y, lVel.z);
+        body.setAngularVelocity(v);
+        body.setLinearVelocity(lv);
+
+    //    Ammo.destroy(v);
+    //    Ammo.destroy(lv);
     }
 
     getObjectState(body) {
         let aVel = body.getAngularVelocity();
         let lVel = body.getLinearVelocity();
 
-        _trans3 = body.getWorldTransform();
+        let trans = body.getWorldTransform();
 
-        let origin = _trans3.getOrigin();
-        let rotation = _trans3.getRotation();
+        let origin = trans.getOrigin();
+        let rotation = trans.getRotation();
 
-        let basis = _trans3.getBasis();
+        let basis = trans.getBasis();
         let rows = [];
         for (let i = 0; i < 3; i++) {
             let row = basis.getRow(i);

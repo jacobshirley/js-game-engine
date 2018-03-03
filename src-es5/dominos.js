@@ -4,11 +4,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _physics = require("./ext/ammo/physics.js");
+var _ammo = require("./components/ammo/ammo.js");
+
+var _ammo2 = _interopRequireDefault(_ammo);
+
+var _physics = require("./components/ammo/physics.js");
 
 var _physics2 = _interopRequireDefault(_physics);
 
-var _gameObject = require("./ext/game-object.js");
+var _gameObject = require("./components/game-object.js");
 
 var _gameObject2 = _interopRequireDefault(_gameObject);
 
@@ -16,15 +20,15 @@ var _game = require("./base/game.js");
 
 var _game2 = _interopRequireDefault(_game);
 
-var _world = require("./ext/world.js");
+var _world = require("./components/world.js");
 
 var _world2 = _interopRequireDefault(_world);
 
-var _picker = require("./ext/picker/picker.js");
+var _picker = require("./components/picker/picker.js");
 
 var _picker2 = _interopRequireDefault(_picker);
 
-var _pickerBase = require("./ext/picker/picker-base.js");
+var _pickerBase = require("./components/picker/picker-base.js");
 
 var _pickerBase2 = _interopRequireDefault(_pickerBase);
 
@@ -32,13 +36,13 @@ var _mouse = require("./base/controller/mouse.js");
 
 var _mouse2 = _interopRequireDefault(_mouse);
 
-var _renderer = require("./ext/rendering/three/renderer.js");
+var _renderer = require("./components/rendering/three/renderer.js");
 
 var _renderer2 = _interopRequireDefault(_renderer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const BRICKS = 10;
+const BRICKS = 60;
 
 if (typeof window !== 'undefined') {
   var $debugPane = $("#debug");
@@ -51,13 +55,23 @@ function setDebugText(text) {
 class Dominos extends _game2.default {
   constructor(config) {
     super(config);
+    this.inited = false;
 
     if (!this.config.headless) {
       this.renderer = new _renderer2.default(document.body);
       this.initRenderer();
     }
 
-    this.inited = false;
+    if (typeof window != 'undefined') {
+      $(document).keypress(e => {
+        if (e.key != "a") return;
+        console.log("requesting reset"); //this.engine.restart();
+
+        this.queue.push({
+          name: "RESET22"
+        });
+      });
+    }
   }
 
   initRenderer() {
@@ -86,8 +100,18 @@ class Dominos extends _game2.default {
     });
   }
 
+  createShapes() {
+    let size = new _ammo2.default.btVector3(50, 1, 50);
+    this.floorShape = new _ammo2.default.btBoxShape(size);
+    this.floorShape.setMargin(0.04);
+    size = new _ammo2.default.btVector3(1 / 3, 1, 0.15);
+    this.pieceShape = new _ammo2.default.btBoxShape(size);
+    this.pieceShape.setMargin(0.04);
+  }
+
   reset(state) {
     this.physics.reset();
+    this.createShapes();
     this.createObjects(this.config.headless, state);
     this.world.setWorldState(state);
     this.world.update();
@@ -100,6 +124,7 @@ class Dominos extends _game2.default {
         height: 1,
         length: 0.15
       },
+      shape: this.pieceShape,
       color: 0xFFD737,
       mass: 50,
       friction: 2,
@@ -108,8 +133,7 @@ class Dominos extends _game2.default {
     };
     props.position = position;
     props.rotation = rotation;
-
-    let phys = _physics2.default.createBlock(props);
+    let phys = this.physics.createBlock(props);
 
     if (useRenderer) {
       var rend = this.renderer.createCube(props);
@@ -131,6 +155,7 @@ class Dominos extends _game2.default {
         z: 0
       },
       mass: 0,
+      shape: this.floorShape,
       material: headless ? undefined : new THREE.MeshPhongMaterial({
         color: 0x136CCC
       }),
@@ -138,7 +163,7 @@ class Dominos extends _game2.default {
       cashShadow: true,
       receiveShadow: true
     };
-    let floor = new _gameObject2.default(_physics2.default.createBlock(props2), headless ? undefined : this.renderer.createCube(props2));
+    let floor = new _gameObject2.default(this.physics.createBlock(props2), headless ? undefined : this.renderer.createCube(props2));
 
     if (states) {
       this.world.objects[0].physicsObj = floor.physicsObj;
@@ -213,32 +238,41 @@ class Dominos extends _game2.default {
 
     this.world.addStateManager(this.picker);
     this.queue.addProcessor(this.picker);
-    this.queue.addProcessor(this);
+    this.queue.addProcessor(this); //Ammo.destroy(size);
+
+    this.createShapes();
 
     if (this.isServer) {
       this.createObjects(this.config.headless);
     }
   }
 
-  destroy() {
+  restart() {
+    //this.inited = false;
+    console.log("restarting");
     this.physics.reset();
-    this.renderer.destroy();
-    this.inited = false; //this.world.destroy();
+    this.createShapes();
+    this.createObjects(this.config.headless, true);
+  }
+
+  destroy() {
+    this.inited = false;
+    this.world.destroy();
   }
 
   process(update) {
     if (update.name == "CREATE_WORLD") {
       if (!this.isServer && !this.inited) {
         this.inited = true;
-        this.createObjects();
+        this.createObjects(this.config.headless);
+        this.world.setWorldState(update.states);
+      } else {
+        console.log("reset");
+        this.reset(update.states);
       }
-
-      console.log("reset");
-      this.reset(update.states);
     } else if (update.name == "INIT_TICK") {
       if (!this.queue.isHost) {
-        console.log("sending"); //this.engine.clientInterface.clear();
-
+        //this.engine.clientInterface.clear();
         this.queue.push({
           name: "INIT_WORLD"
         }, true);
@@ -251,8 +285,9 @@ class Dominos extends _game2.default {
           states
         }, true);
       }
-    } else if (update.name == "RESET") {
-      this.reset(this.world.getWorldState());
+    } else if (update.name == "RESET22") {
+      console.log("Reset22");
+      this.engine.restart();
     }
   }
 

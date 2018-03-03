@@ -13,6 +13,10 @@ export default class ServerTestHandler extends LockstepClientInterface {
         this.clients.setHost(0);
 
         this.connected = true;
+    }
+
+    reset() {
+        this.clear();
         this.emit("connected", this.local);
     }
 

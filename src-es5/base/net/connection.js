@@ -34,11 +34,13 @@ class WebSocketConnection extends Connection {
     this.ws = new WebSocket(this.ip);
 
     this.ws.onopen = () => {
+      console.log("Connected");
       this.connected = true;
       this.emit('connected');
     };
 
     this.ws.onclose = () => {
+      console.log("Disconnected");
       this.connected = false;
       this.emit('disconnected');
     };
@@ -52,12 +54,26 @@ class WebSocketConnection extends Connection {
     };
   }
 
+  reset() {
+    this.connected = false;
+    this.ws.close();
+
+    this.ws.onclose = () => {
+      this.connect();
+    };
+  }
+
   close() {
+    this.connected = false;
     this.ws.close();
   }
 
   send(data) {
-    if (this.connected) this.ws.send(JSON.stringify(data));
+    if (this.connected) {
+      this.ws.send(JSON.stringify(data));
+    } else {
+      console.log("not connected");
+    }
   }
 
 }

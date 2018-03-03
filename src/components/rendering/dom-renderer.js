@@ -1,9 +1,7 @@
 import Renderer from "./renderer.js";
 
-export default class DOMRenderer extends Renderer {
+export default class DOMRenderer {
 	constructor(domOwner) {
-        super();
-
         this.domOwner = domOwner;
 		this.tabActive = true;
 

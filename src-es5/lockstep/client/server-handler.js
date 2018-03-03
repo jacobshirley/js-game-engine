@@ -67,8 +67,7 @@ class ServerHandler extends _lockstepClientInterface2.default {
   }
 
   reconnect() {
-    this.connection.close();
-    this.connection.connect();
+    this.connection.reset();
   }
 
   update(frame) {
@@ -81,10 +80,11 @@ class ServerHandler extends _lockstepClientInterface2.default {
     if (this.connected) this.local.update(frame);
   }
 
-  clear() {
-    for (let cl of this.clients.arr) {
-      cl.clear();
-    }
+  reset() {
+    this.connected = false;
+    this.flush();
+    this.clear();
+    this.reconnect();
   }
 
   process(update) {

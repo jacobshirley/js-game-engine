@@ -10,7 +10,7 @@ function encode(server, from, object) {
     return new Packet(from, JSON.stringify(object), server);
 }
 
-export default class GameServer extends LockstepClientInterface {
+export default class ClientHandler extends LockstepClientInterface {
     constructor(port) {
         super();
 
@@ -30,11 +30,13 @@ export default class GameServer extends LockstepClientInterface {
                 cl.cache(JSON.parse(message));
                 this.packets.push(new Packet(cl.id(), message, false));
 
-                this.emit("message", {client: cl, message: message});
+                this.emit("message", {client: cl, message});
         	});
 
         	ws.on('close', (ws2) => {
                 this.packets.push(encode(true, this.local.id(), [{name: "CLIENT_REMOVED", id: cl.id()}]));
+                this.packets.push(encode(false, cl.id(), [{name: "DISCONNECTED", id: cl.id()}]))
+                cl.push({name: "DISCONNECTED", id: cl.id()});
 
                 this.emit("disconnection", cl);
          	});
@@ -54,19 +56,21 @@ export default class GameServer extends LockstepClientInterface {
 
         while (this.connections.length > 0) {
             let conn = this.connections.shift();
-            let initialUpdates = [];
+            //if (conn.connected) {
+                let initialUpdates = [];
 
-        	initialUpdates.push({name: "CONNECTED", id: conn.id(), isHost: conn.host()});
-            initialUpdates.push({name: "CLIENTS_LIST", list: this.clients.export()});
-            initialUpdates.push({name: "SET_HOST", id: this.clients.hostId});
-            conn.send([encode(true, this.local.id(), initialUpdates).json()]);
+            	initialUpdates.push({name: "CONNECTED", id: conn.id(), isHost: conn.host()});
+                initialUpdates.push({name: "CLIENTS_LIST", list: this.clients.export()});
+                initialUpdates.push({name: "SET_HOST", id: this.clients.hostId});
+                conn.send([encode(true, this.local.id(), initialUpdates).json()]);
 
-            this.local.push({name: "CLIENT_ADDED", id: conn.id(), isHost: conn.host()});
-            this.packets.push(encode(true, this.local.id(), [{name: "CLIENT_ADDED", id: conn.id(), isHost: conn.host()}]));
+                this.local.push({name: "CLIENT_ADDED", id: conn.id(), isHost: conn.host()});
+                this.packets.push(encode(true, this.local.id(), [{name: "CLIENT_ADDED", id: conn.id(), isHost: conn.host()}]));
 
-            this.emit("connection", conn);
+                this.emit("connection", conn);
 
-            console.log("Added client " + conn.id());
+                console.log("Added client " + conn.id());
+        //    }
         }
     }
 
@@ -92,11 +96,13 @@ export default class GameServer extends LockstepClientInterface {
                 }
 
                 if (clUpdates.length > 0) {
-                    try {
+                    if (client.connected) {
                         client.send(clUpdates);
-                    } catch (e) {
-                        this.clients.remove(client.id());
-                        console.log("Client error: " + e.message + " -> Removing client");
+                    } else {
+                        //this.clients.remove(client.id());
+                        if (client.updates.length == 0)
+                            this.clients.remove(client.id());
+                        //console.log("Client error: " + e.message + " -> Removing client");
                     }
                 }
             }

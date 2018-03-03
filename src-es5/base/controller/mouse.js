@@ -10,6 +10,25 @@ var _events2 = _interopRequireDefault(_events);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+if (typeof window !== 'undefined') {
+  var listeners = [];
+  $(window).mousedown(event => {
+    event.preventDefault();
+
+    for (let l of listeners) l.mousedown(event);
+  });
+  $(window).mouseup(event => {
+    event.preventDefault();
+
+    for (let l of listeners) l.mouseup(event);
+  });
+  $(window).mousemove(event => {
+    event.preventDefault();
+
+    for (let l of listeners) l.mousemove(event);
+  });
+}
+
 class MouseController extends _events2.default {
   constructor(id, networked) {
     super();
@@ -24,47 +43,49 @@ class MouseController extends _events2.default {
     this.userData = {};
   }
 
+  mousedown(event) {
+    this.realX = event.clientX / window.innerWidth * 2 - 1;
+    this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.realMouseDown = true;
+    this.queue.pushFramed({
+      name: "MOUSE_DOWN",
+      mouseDown: this.realMouseDown,
+      x: this.realX,
+      y: this.realY
+    }, this.networked);
+  }
+
+  mouseup(event) {
+    this.realX = event.clientX / window.innerWidth * 2 - 1;
+    this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.realMouseDown = false;
+    this.queue.pushFramed({
+      name: "MOUSE_UP",
+      mouseDown: this.realMouseDown,
+      x: this.realX,
+      y: this.realY
+    }, this.networked);
+  }
+
+  mousemove(event) {
+    this.realX = event.clientX / window.innerWidth * 2 - 1;
+    this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.queue.pushFramed({
+      name: "MOUSE_MOVE",
+      x: this.realX,
+      y: this.realY
+    }, this.networked);
+  }
+
   init(queue) {
     this.queue = queue;
-    $(window).mousedown(event => {
-      event.preventDefault();
-      this.realX = event.clientX / window.innerWidth * 2 - 1;
-      this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
-      this.realMouseDown = true;
-      this.queue.pushFramed({
-        name: "MOUSE_DOWN",
-        mouseDown: this.realMouseDown,
-        x: this.realX,
-        y: this.realY
-      }, this.networked);
-    });
-    $(window).mouseup(event => {
-      event.preventDefault();
-      this.realX = event.clientX / window.innerWidth * 2 - 1;
-      this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
-      this.realMouseDown = false;
-      this.queue.pushFramed({
-        name: "MOUSE_UP",
-        mouseDown: this.realMouseDown,
-        x: this.realX,
-        y: this.realY
-      }, this.networked);
-    });
-    $(window).mousemove(event => {
-      event.preventDefault();
-      this.realX = event.clientX / window.innerWidth * 2 - 1;
-      this.realY = -(event.clientY / window.innerHeight) * 2 + 1;
-      this.queue.pushFramed({
-        name: "MOUSE_MOVE",
-        x: this.realX,
-        y: this.realY
-      }, this.networked);
-    });
+    listeners.push(this);
     this.queue.addProcessor(this);
   }
 
   destroy() {
-    this.queue.addProcessor(remove);
+    this.queue.removeProcessor(this);
+    listeners.splice(listeners.indexOf(this), 1);
   }
 
   process(update) {

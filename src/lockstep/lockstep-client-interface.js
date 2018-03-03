@@ -16,6 +16,12 @@ export default class LockstepClientInterface extends EventEmitter {
 		}
 	}
 
+    clear() {
+		for (let cl of this.clients.arr) {
+			cl.clear();
+		}
+	}
+
     getLocalClient() {}
 
     getClients() {

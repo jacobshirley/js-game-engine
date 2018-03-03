@@ -32,7 +32,7 @@ function encode(server, from, object) {
   return new _packet2.default(from, JSON.stringify(object), server);
 }
 
-class GameServer extends _lockstepClientInterface2.default {
+class ClientHandler extends _lockstepClientInterface2.default {
   constructor(port) {
     super();
     this.wss = new _ws.Server({
@@ -51,7 +51,7 @@ class GameServer extends _lockstepClientInterface2.default {
         this.packets.push(new _packet2.default(cl.id(), message, false));
         this.emit("message", {
           client: cl,
-          message: message
+          message
         });
       });
       ws.on('close', ws2 => {
@@ -59,6 +59,14 @@ class GameServer extends _lockstepClientInterface2.default {
           name: "CLIENT_REMOVED",
           id: cl.id()
         }]));
+        this.packets.push(encode(false, cl.id(), [{
+          name: "DISCONNECTED",
+          id: cl.id()
+        }]));
+        cl.push({
+          name: "DISCONNECTED",
+          id: cl.id()
+        });
         this.emit("disconnection", cl);
       });
     });
@@ -75,7 +83,8 @@ class GameServer extends _lockstepClientInterface2.default {
     this.local.update(frame);
 
     while (this.connections.length > 0) {
-      let conn = this.connections.shift();
+      let conn = this.connections.shift(); //if (conn.connected) {
+
       let initialUpdates = [];
       initialUpdates.push({
         name: "CONNECTED",
@@ -102,7 +111,7 @@ class GameServer extends _lockstepClientInterface2.default {
         isHost: conn.host()
       }]));
       this.emit("connection", conn);
-      console.log("Added client " + conn.id());
+      console.log("Added client " + conn.id()); //    }
     }
   }
 
@@ -127,11 +136,11 @@ class GameServer extends _lockstepClientInterface2.default {
         }
 
         if (clUpdates.length > 0) {
-          try {
+          if (client.connected) {
             client.send(clUpdates);
-          } catch (e) {
-            this.clients.remove(client.id());
-            console.log("Client error: " + e.message + " -> Removing client");
+          } else {
+            //this.clients.remove(client.id());
+            if (client.updates.length == 0) this.clients.remove(client.id()); //console.log("Client error: " + e.message + " -> Removing client");
           }
         }
       }
@@ -142,4 +151,4 @@ class GameServer extends _lockstepClientInterface2.default {
 
 }
 
-exports.default = GameServer;
+exports.default = ClientHandler;

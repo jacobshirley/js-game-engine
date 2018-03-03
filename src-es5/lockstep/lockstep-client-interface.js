@@ -26,6 +26,12 @@ class LockstepClientInterface extends _events2.default {
     }
   }
 
+  clear() {
+    for (let cl of this.clients.arr) {
+      cl.clear();
+    }
+  }
+
   getLocalClient() {}
 
   getClients() {

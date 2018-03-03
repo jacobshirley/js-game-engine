@@ -15,7 +15,17 @@ class Controllers {
     this.cont.push(controller);
   }
 
-  remove(controller) {//to do
+  remove(controller) {
+    controller.destroy();
+    this.cont.splice(this.cont.indexOf(controller), 1);
+  }
+
+  destroy() {
+    for (let c of this.cont) {
+      c.destroy();
+    }
+
+    this.cont = [];
   }
 
 }
