@@ -28,7 +28,7 @@ export default class LockstepEngine extends Events {
 
     _build() {
         this.queue = new LockstepUpdateQueue(this.clientInterface.getLocalClient(), this.clientInterface.getClients());
-        this.renderTimer = new LockstepTimer(this, 7, 2, 10, 1000);
+        this.renderTimer = new LockstepTimer(this, 20, 2, 30, 1000);
         this.logicTimer = this.renderTimer.logicTimer;
 
         this.queue.addProcessor(this.renderTimer);
