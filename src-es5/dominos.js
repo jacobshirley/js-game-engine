@@ -42,7 +42,7 @@ var _renderer2 = _interopRequireDefault(_renderer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const BRICKS = 60;
+const BRICKS = 30;
 
 if (typeof window !== 'undefined') {
   var $debugPane = $("#debug");

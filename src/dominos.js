@@ -11,7 +11,7 @@ import MouseController from "./base/controller/mouse.js";
 
 import ThreeRenderer from "./components/rendering/three/renderer.js";
 
-const BRICKS = 60;
+const BRICKS = 30;
 
 if (typeof window !== 'undefined') {
     var $debugPane = $("#debug");
