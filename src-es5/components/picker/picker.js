@@ -29,6 +29,7 @@ class Picker extends _pickerBase2.default {
     this.orbitControls = this.renderer.getOrbitControls();
     this.mouseDown = false;
     this.mouse.on("mousedown", ct => {
+      if (ct.button !== 0) return;
       let callback = new _ammo2.default.ClosestRayResultCallback();
       let world = this.physics.dynamicsWorld;
       let renderer = this.renderer;
