@@ -21,6 +21,9 @@ export default class Picker extends PickerBase {
 		this.mouseDown = false;
 
 		this.mouse.on("mousedown", (ct) => {
+			if (ct.button !== 0)
+				return;
+
 			let callback = new Ammo.ClosestRayResultCallback();
 			let world = this.physics.dynamicsWorld;
 
