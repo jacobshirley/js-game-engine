@@ -70,14 +70,17 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 
 				if (this.isHost) {
 					let i = 0;
-					let updated = it.hasNext();
+					let updated = false;
 
 					while (it.hasNext()) {
 						let u = it.remove();
 						u.__clId = stream.id();
+						if (typeof u.frame != 'undefined') {
+							updated = true;
+							i++;
+						}
 
 						this.updates.push(u);
-						i++;
 					}
 
 					if (updated) {
@@ -86,18 +89,27 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 						applied.push({id: stream.id(), count: i});
 					}
 				} else {
-					if (stream.toBeRead > 0) {
 						//console.log("applied "+stream.toBeRead+" on frame "+frame);
-						while (it.hasNext() && stream.toBeRead-- > 0) {
-							let u = it.remove();
-							u.__clId = stream.id();
+					while (it.hasNext()) {
+						let u = it.next();
+						u.__clId = stream.id();
+
+						if (typeof u.frame != 'undefined') {
+							if (stream.toBeRead > 0) {
+								it.remove();
+								
+							 	this.updates.push(u);
+								stream.toBeRead--;
+							}
+						} else {
+							it.remove();
 							this.updates.push(u);
 						}
+					}
 
-						if (stream.toBeRead > 0) {
-							console.log("Has not received " + stream.toBeRead + " updates from client " + stream.id());
-							throw new LockstepQueueError(-1);
-						}
+					if (stream.toBeRead > 0) {
+						console.log("Has not received " + stream.toBeRead + " updates from client " + stream.id());
+						throw new LockstepQueueError(-1);
 					}
 				}
 			}

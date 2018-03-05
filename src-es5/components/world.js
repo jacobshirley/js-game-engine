@@ -23,7 +23,7 @@ class World {
     this.renderer = renderer;
     this.physics = physics;
     /*this.engine.on("restart", () => {
-      });*/
+     });*/
   }
 
   destroy() {
