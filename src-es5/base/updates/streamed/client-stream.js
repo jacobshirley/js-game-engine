@@ -19,6 +19,7 @@ class ClientUpdateStream extends _client2.default {
   constructor(id, isHost) {
     super(id, isHost);
     this.updates = [];
+    this.toBeRead = 0;
     this._cachedUpdates = [];
   }
 
@@ -45,6 +46,7 @@ class ClientUpdateStream extends _client2.default {
 
   export() {
     let ex = super.export();
+    ex.toBeRead = this.toBeRead;
     ex.updates = this.updates;
     return ex;
   }

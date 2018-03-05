@@ -7,6 +7,7 @@ export class ClientUpdateStream extends Client {
 		super(id, isHost);
 
 		this.updates = [];
+		this.toBeRead = 0;
 		this._cachedUpdates = [];
 	}
 
@@ -33,6 +34,7 @@ export class ClientUpdateStream extends Client {
 
 	export() {
 		let ex = super.export();
+		ex.toBeRead = this.toBeRead;
 		ex.updates = this.updates;
 		return ex;
 	}
