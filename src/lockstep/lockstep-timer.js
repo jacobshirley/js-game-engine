@@ -37,8 +37,8 @@ export default class LockstepTimer extends GameTimer {
 			return super.update(main);
 		} catch (e) {
 			if (e instanceof LockstepQueueError) {
-				console.log("LockstepError: Delaying");
-				this.addDelay(new Delay(this.delay, true));
+				console.log("Haven't got all the updates. Restarting...");
+				this.engine.restart();
 			} else
 				throw e;
 		}
