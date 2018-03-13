@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _ws = require("ws");
 
-var _events = require("../../base/shims/events.js");
+var _events = require("../../shims/events.js");
 
 var _events2 = _interopRequireDefault(_events);
 

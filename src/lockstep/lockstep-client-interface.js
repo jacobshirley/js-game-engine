@@ -1,4 +1,4 @@
-import EventEmitter from "../base/shims/events.js";
+import EventEmitter from "../shims/events.js";
 import {ClientList} from "../base/updates/client.js";
 
 export default class LockstepClientInterface extends EventEmitter {

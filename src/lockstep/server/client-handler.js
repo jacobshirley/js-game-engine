@@ -1,5 +1,5 @@
 import {Server as WebSocketServer} from "ws";
-import EventEmitter from "../../base/shims/events.js";
+import EventEmitter from "../../shims/events.js";
 import {ClientList} from "../../base/updates/client.js";
 import {LocalClientUpdateStream, ClientUpdateStream} from "../../base/updates/streamed/client-stream.js";
 import Packet from "./packet.js";

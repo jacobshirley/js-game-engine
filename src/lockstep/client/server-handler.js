@@ -2,7 +2,7 @@ import LockstepClientInterface from "../lockstep-client-interface.js";
 import {ClientList} from "../../base/updates/client.js";
 import {LocalClientUpdateStream, ClientUpdateStream} from "../../base/updates/streamed/client-stream.js";
 import BasicIterator from "../../base/updates/iteration.js";
-import EventEmitter from "../../base/shims/events.js";
+import EventEmitter from "../../shims/events.js";
 
 export default class ServerHandler extends LockstepClientInterface {
 	constructor(connection, ...args) {

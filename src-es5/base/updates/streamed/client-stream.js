@@ -72,6 +72,7 @@ class LocalClientUpdateStream extends ClientUpdateStream {
       update.__updateId = this.updateID++;
       this.toBeSent.push(update);
     } else {
+      update.__local = true;
       this.localUpdates.push(update);
     }
   }

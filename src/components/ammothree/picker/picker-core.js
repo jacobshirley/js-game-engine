@@ -1,9 +1,9 @@
-import UpdateProcessor from "../../base/updates/update-processor.js";
+import Component from "../../component.js";
 import Physics from "../ammo/physics.js";
 
-export default class PickerBase extends UpdateProcessor {
-    constructor(pool, physics) {
-        super(pool);
+export default class PickerCore extends Component {
+    constructor(physics) {
+        super("Picker Core");
 
         this.physics = physics;
         this.handles = [];

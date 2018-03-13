@@ -6,8 +6,5 @@ export default class Component {
     getUpdater() {}
     getStateManager() {}
 
-    onDisconnect() {}
-
     logic(frame) {}
-    render() {}
 }

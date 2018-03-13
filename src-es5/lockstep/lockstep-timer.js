@@ -36,10 +36,15 @@ class LockstepTimer extends _gameTimer2.default {
     this._resetTick = 0;
     this._requestedReset = false;
     this._minUpdates = 0;
+    this._processed = 0;
 
     if (this.queue.isHost) {
       let interval = new _interval2.default(this.syncInterval, true);
       interval.on('complete', () => {
+        this.queue.pushFramed({
+          name: "PROCESSED_UPDATES",
+          processedUpdates: this._processed
+        }, true);
         this.queue.push({
           name: "HOST_TICK",
           tick: this.logicTimer.tick,
@@ -64,14 +69,16 @@ class LockstepTimer extends _gameTimer2.default {
   }
 
   process(update) {
+    if (!update.__local && typeof update.frame !== 'undefined') this._processed++;
+
     if (this.queue.isHost) {
       if (update.name == "CLIENT_ADDED" || update.name == "REQUEST_RESET") {
         this.queue.push({
           name: "INIT_TICK",
           target: update.id || update.__clId,
-          tick: this.logicTimer.tick
+          tick: this.logicTimer.tick,
+          processedUpdates: this._processed
         }, true);
-      } else if (update.name == "REFRESH_NET") {//	this.queue.push({name: "RESET_MAGIC", })
       }
 
       return;
@@ -79,16 +86,14 @@ class LockstepTimer extends _gameTimer2.default {
 
     if (update.name == "HOST_TICK") {
       if (!this._inited) return;
-      let diff = update.tick - this.logicTimer.tick; //console.log(diff);
+      let diff = update.tick - this.logicTimer.tick;
 
       if (!this._requestedReset && this._resetTick < update.tick) {
         if (diff >= 0 && diff <= this.minDelay) {
           this._resetTick += this.delay;
           this.logicTimer.addDelay(new _delay2.default(this.delay, true));
         } else if (diff < 0 || diff >= this.resetDelay) {
-          this._requestedReset = true; //this.clientInterface.clear();
-          //	this.client.push({name: "REFRESH_NET"}, true);
-
+          this._requestedReset = true;
           this.engine.restart();
         } else if (diff > this.maxDelay) {
           this.updateTime = this.logicInterval * Math.max(0, diff - this.delay);
@@ -100,12 +105,18 @@ class LockstepTimer extends _gameTimer2.default {
       this._resetTick = update.tick + this.delay;
       this.updateTime = 0;
       this.deltaTime = this.logicInterval;
+      this._processed = update.processedUpdates;
       this.addDelay(new _delay2.default(this.delay, true));
       this._inited = true;
       this.queue.push({
         name: "SET_CLOCK"
       });
-    } else if (update.name == "RESET_CLOCK") {}
+    } else if (update.name == "PROCESSED_UPDATES") {
+      if (!this._inited) return;
+
+      if (this._processed != update.processedUpdates) {//work in progress to try to detect client drift
+      }
+    }
   }
 
 }

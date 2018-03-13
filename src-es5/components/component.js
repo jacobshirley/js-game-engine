@@ -13,11 +13,7 @@ class Component {
 
   getStateManager() {}
 
-  onDisconnect() {}
-
   logic(frame) {}
-
-  render() {}
 
 }
 

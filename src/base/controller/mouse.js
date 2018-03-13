@@ -1,4 +1,4 @@
-import EventEmitter from "../shims/events.js";
+import EventEmitter from "../../shims/events.js";
 
 if (typeof window !== 'undefined') {
     var listeners = [];

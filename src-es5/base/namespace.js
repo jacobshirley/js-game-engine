@@ -20,6 +20,7 @@ exports.default = function (name, cls) {
   return ns;
 };
 
+//CLASS NOT IN USE
 let namespaces = [];
 let namespaceNames = [];
 

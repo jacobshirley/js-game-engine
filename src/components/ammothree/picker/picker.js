@@ -1,13 +1,13 @@
-import PickerBase from "./picker-base.js";
+import PickerCore from "./picker-core.js";
 import Ammo from "../ammo/ammo.js";
 
 function inRange(x, min, max) {
 	return x >= min && x <= max;
 }
 
-export default class Picker extends PickerBase {
+export default class Picker extends PickerCore {
 	constructor(queue, renderer, physics, mouse) {
-		super(queue, physics);
+		super(physics);
 
 		this.enabled = false;
 

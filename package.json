@@ -1,7 +1,7 @@
 {
-  "name": "dominos",
+  "name": "js-game-engine",
   "version": "1.0.0",
-  "main": "environment.js",
+  "main": "script.js",
   "scripts": {
     "build-server": "babel src/ -d src-es5/ -w",
     "run-server": "node src-es5/server.js",
@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/Auriferous/jsdominos.git"
+    "url": "git+ssh://git@github.com:JacobShirley95/js-game-engine.git"
   },
   "author": "",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/Auriferous/jsdominos#readme",
+  "homepage": "https://github.com/JacobShirley95/js-game-engine",
   "dependencies": {
     "ws": "^1.1.5"
   },

@@ -1,15 +1,15 @@
-import Ammo from "./components/ammo/ammo.js";
-import Physics from "./components/ammo/physics.js";
+import Ammo from "./components/ammothree/ammo/ammo.js";
+import Physics from "./components/ammothree/ammo/physics.js";
 import GameObject from "./components/game-object.js";
 import Game from "./base/game.js";
 
-import World from "./components/world.js";
-import Picker from "./components/picker/picker.js";
-import PickerBase from "./components/picker/picker-base.js";
+import World from "./components/ammothree/world.js";
+import Picker from "./components/ammothree/picker/picker.js";
+import PickerCore from "./components/ammothree/picker/picker-core.js";
 
 import MouseController from "./base/controller/mouse.js";
 
-import ThreeRenderer from "./components/rendering/three/renderer.js";
+import ThreeRenderer from "./components/ammothree/rendering/three/renderer.js";
 
 const BRICKS = 30;
 
@@ -21,7 +21,7 @@ function setDebugText(text) {
     $debugPane.html(text);
 }
 
-export default class Dominos extends Game {
+export default class Jenga extends Game {
     constructor(config) {
         super(config);
 
@@ -184,10 +184,10 @@ export default class Dominos extends Game {
 
             this.picker = new Picker(this.queue, this.renderer, this.physics, mouse);
         } else {
-            this.picker = new PickerBase(this.queue, this.physics);
+            this.picker = new PickerCore(this.physics);
         }
 
-        this.world.addStateManager(this.picker);
+        this.world.addComponent(this.picker);
         this.queue.addProcessor(this.picker);
         this.queue.addProcessor(this);
 

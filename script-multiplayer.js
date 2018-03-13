@@ -3,8 +3,7 @@ import LockstepEngine from "./src/lockstep/lockstep-engine.js";
 import ServerHandler from "./src/lockstep/client/server-handler.js";
 import ServerTestHandler from "./src/lockstep/client/server-test-handler.js";
 
-import Dominos from "./src/dominos.js";
-import Namespace from "./src/base/namespace.js";
+import Jenga from "./src/jenga.js";
 
 const test = false;
 
@@ -21,9 +20,9 @@ function main() {
         sendOnFrame: 2
     };
 
-    window.game = new Dominos(config);
+    window.jenga = new Jenga(config);
 
-    let engine = new LockstepEngine(window.game, config);
+    let engine = new LockstepEngine(window.jenga, config);
     engine.start();
 }
 

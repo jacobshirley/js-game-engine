@@ -24,7 +24,7 @@ var _controllers = require("../base/controller/controllers.js");
 
 var _controllers2 = _interopRequireDefault(_controllers);
 
-var _events = require("../base/shims/events.js");
+var _events = require("../shims/events.js");
 
 var _events2 = _interopRequireDefault(_events);
 
@@ -48,7 +48,7 @@ class LockstepEngine extends _events2.default {
 
   _build() {
     this.queue = new _lockstepQueue2.default(this.clientInterface.getLocalClient(), this.clientInterface.getClients());
-    this.renderTimer = new _lockstepTimer2.default(this, 7, 2, 10, 1000);
+    this.renderTimer = new _lockstepTimer2.default(this, 20, 2, 30, 1000);
     this.logicTimer = this.renderTimer.logicTimer;
     this.queue.addProcessor(this.renderTimer);
     this.controllers = new _controllers2.default(this.queue);

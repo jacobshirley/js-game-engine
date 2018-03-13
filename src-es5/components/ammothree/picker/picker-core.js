@@ -4,9 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _updateProcessor = require("../../base/updates/update-processor.js");
+var _component = require("../../component.js");
 
-var _updateProcessor2 = _interopRequireDefault(_updateProcessor);
+var _component2 = _interopRequireDefault(_component);
 
 var _physics = require("../ammo/physics.js");
 
@@ -14,9 +14,9 @@ var _physics2 = _interopRequireDefault(_physics);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class PickerBase extends _updateProcessor2.default {
-  constructor(pool, physics) {
-    super(pool);
+class PickerCore extends _component2.default {
+  constructor(physics) {
+    super("Picker Core");
     this.physics = physics;
     this.handles = [];
 
@@ -95,4 +95,4 @@ class PickerBase extends _updateProcessor2.default {
 
 }
 
-exports.default = PickerBase;
+exports.default = PickerCore;

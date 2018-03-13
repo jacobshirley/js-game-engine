@@ -4,9 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _pickerBase = require("./picker-base.js");
+var _pickerCore = require("./picker-core.js");
 
-var _pickerBase2 = _interopRequireDefault(_pickerBase);
+var _pickerCore2 = _interopRequireDefault(_pickerCore);
 
 var _ammo = require("../ammo/ammo.js");
 
@@ -18,9 +18,9 @@ function inRange(x, min, max) {
   return x >= min && x <= max;
 }
 
-class Picker extends _pickerBase2.default {
+class Picker extends _pickerCore2.default {
   constructor(queue, renderer, physics, mouse) {
-    super(queue, physics);
+    super(physics);
     this.enabled = false;
     this.renderer = renderer;
     this.mouse = mouse;

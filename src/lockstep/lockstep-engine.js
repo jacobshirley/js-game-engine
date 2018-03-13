@@ -3,9 +3,9 @@ import LockstepTimer from "./lockstep-timer.js";
 import GameTimer from "../base/timing/game-timer.js";
 import Interval from "../base/timing/interval.js";
 import Controllers from "../base/controller/controllers.js";
-import Events from "../base/shims/events.js";
+import EventManager from "../shims/events.js";
 
-export default class LockstepEngine extends Events {
+export default class LockstepEngine extends EventManager {
     constructor(game, config) {
         super();
 

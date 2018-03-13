@@ -16,7 +16,7 @@ var _iteration = require("../../base/updates/iteration.js");
 
 var _iteration2 = _interopRequireDefault(_iteration);
 
-var _events = require("../../base/shims/events.js");
+var _events = require("../../shims/events.js");
 
 var _events2 = _interopRequireDefault(_events);
 

@@ -3,9 +3,15 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-let SERVER_ID = 0;
+exports.TestConnection = exports.WebSocketConnection = undefined;
 
-class Connection extends EventEmitter {
+var _events = require("../../shims/events.js");
+
+var _events2 = _interopRequireDefault(_events);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+class Connection extends _events2.default {
   constructor() {
     super();
     this.connected = false;

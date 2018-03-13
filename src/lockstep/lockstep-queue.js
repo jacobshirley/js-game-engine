@@ -1,7 +1,7 @@
 import UpdateStream from "../base/updates/streamed/stream.js";
 import StreamUpdateQueue from "../base/updates/streamed/stream-update-queue.js";
 import LockstepQueueError from "./lockstep-queue-error.js";
-import EventEmitter from "../base/shims/events.js";
+import EventEmitter from "../shims/events.js";
 
 const LATENCY = 20;
 
@@ -10,12 +10,7 @@ export default class LockstepUpdateQueue extends StreamUpdateQueue {
 		super(local, clients);
 
 		this.updates = [];
-		this.controlServerID = -1;
 		this.app = 0;
-	}
-
-	setControlServer(id) {
-		this.controlServerID = id;
 	}
 
 	queueLocalUpdates() {

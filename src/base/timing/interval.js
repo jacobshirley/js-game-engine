@@ -1,4 +1,4 @@
-import EventEmitter from "../shims/events.js";
+import EventEmitter from "../../shims/events.js";
 
 export default class Interval extends EventEmitter {
 	constructor(target, useTicks) {

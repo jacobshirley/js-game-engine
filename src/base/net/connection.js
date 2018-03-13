@@ -1,4 +1,4 @@
-let SERVER_ID = 0;
+import EventEmitter from "../../shims/events.js";
 
 export default class Connection extends EventEmitter {
 	constructor() {

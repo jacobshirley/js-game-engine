@@ -4,11 +4,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _ammo = require("./components/ammo/ammo.js");
+var _ammo = require("./components/ammothree/ammo/ammo.js");
 
 var _ammo2 = _interopRequireDefault(_ammo);
 
-var _physics = require("./components/ammo/physics.js");
+var _physics = require("./components/ammothree/ammo/physics.js");
 
 var _physics2 = _interopRequireDefault(_physics);
 
@@ -20,23 +20,23 @@ var _game = require("./base/game.js");
 
 var _game2 = _interopRequireDefault(_game);
 
-var _world = require("./components/world.js");
+var _world = require("./components/ammothree/world.js");
 
 var _world2 = _interopRequireDefault(_world);
 
-var _picker = require("./components/picker/picker.js");
+var _picker = require("./components/ammothree/picker/picker.js");
 
 var _picker2 = _interopRequireDefault(_picker);
 
-var _pickerBase = require("./components/picker/picker-base.js");
+var _pickerCore = require("./components/ammothree/picker/picker-core.js");
 
-var _pickerBase2 = _interopRequireDefault(_pickerBase);
+var _pickerCore2 = _interopRequireDefault(_pickerCore);
 
 var _mouse = require("./base/controller/mouse.js");
 
 var _mouse2 = _interopRequireDefault(_mouse);
 
-var _renderer = require("./components/rendering/three/renderer.js");
+var _renderer = require("./components/ammothree/rendering/three/renderer.js");
 
 var _renderer2 = _interopRequireDefault(_renderer);
 
@@ -52,7 +52,7 @@ function setDebugText(text) {
   $debugPane.html(text);
 }
 
-class Dominos extends _game2.default {
+class Jenga extends _game2.default {
   constructor(config) {
     super(config);
     this.inited = false;
@@ -233,10 +233,10 @@ class Dominos extends _game2.default {
       this.engine.controllers.add(mouse);
       this.picker = new _picker2.default(this.queue, this.renderer, this.physics, mouse);
     } else {
-      this.picker = new _pickerBase2.default(this.queue, this.physics);
+      this.picker = new _pickerCore2.default(this.physics);
     }
 
-    this.world.addStateManager(this.picker);
+    this.world.addComponent(this.picker);
     this.queue.addProcessor(this.picker);
     this.queue.addProcessor(this); //Ammo.destroy(size);
 
@@ -302,4 +302,4 @@ class Dominos extends _game2.default {
 
 }
 
-exports.default = Dominos;
+exports.default = Jenga;

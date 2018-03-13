@@ -16,7 +16,7 @@ var _lockstepQueueError = require("./lockstep-queue-error.js");
 
 var _lockstepQueueError2 = _interopRequireDefault(_lockstepQueueError);
 
-var _events = require("../base/shims/events.js");
+var _events = require("../shims/events.js");
 
 var _events2 = _interopRequireDefault(_events);
 
@@ -28,12 +28,7 @@ class LockstepUpdateQueue extends _streamUpdateQueue2.default {
   constructor(local, clients) {
     super(local, clients);
     this.updates = [];
-    this.controlServerID = -1;
     this.app = 0;
-  }
-
-  setControlServer(id) {
-    this.controlServerID = id;
   }
 
   queueLocalUpdates() {

@@ -8,24 +8,31 @@ var _ammo = require("./ammo.js");
 
 var _ammo2 = _interopRequireDefault(_ammo);
 
+var _component = require("../../component.js");
+
+var _component2 = _interopRequireDefault(_component);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class Physics {
-  constructor() {
-    this.dynamicsWorld = null;
+class Physics extends _component2.default {
+  constructor(dynamicsWorld) {
+    super("Ammo Physics");
+    this.dynamicsWorld = dynamicsWorld;
     this.shapes = [];
     this.objects = [];
     this.constraints = [];
   }
 
   init() {
-    this.collisionConfiguration = new _ammo2.default.btDefaultCollisionConfiguration(); // every single |new| currently leaks...
+    if (!this.dynamicsWorld) {
+      this.collisionConfiguration = new _ammo2.default.btDefaultCollisionConfiguration(); // every single |new| currently leaks...
 
-    this.dispatcher = new _ammo2.default.btCollisionDispatcher(this.collisionConfiguration);
-    this.overlappingPairCache = new _ammo2.default.btDbvtBroadphase();
-    this.solver = new _ammo2.default.btSequentialImpulseConstraintSolver();
-    this.dynamicsWorld = new _ammo2.default.btDiscreteDynamicsWorld(this.dispatcher, this.overlappingPairCache, this.solver, this.collisionConfiguration);
-    this.dynamicsWorld.setGravity(new _ammo2.default.btVector3(0, -10, 0));
+      this.dispatcher = new _ammo2.default.btCollisionDispatcher(this.collisionConfiguration);
+      this.overlappingPairCache = new _ammo2.default.btDbvtBroadphase();
+      this.solver = new _ammo2.default.btSequentialImpulseConstraintSolver();
+      this.dynamicsWorld = new _ammo2.default.btDiscreteDynamicsWorld(this.dispatcher, this.overlappingPairCache, this.solver, this.collisionConfiguration);
+      this.dynamicsWorld.setGravity(new _ammo2.default.btVector3(0, -10, 0));
+    }
   }
 
   destroy() {
@@ -90,7 +97,7 @@ class Physics {
     if (typeof sideShape == "undefined") {
       let size2 = new _ammo2.default.btVector3(size.width, size.height, size.length);
       sideShape = new _ammo2.default.btBoxShape(size2);
-      sideShape.setMargin(margin); //    Ammo.destroy(size2);
+      sideShape.setMargin(margin);
     }
 
     if (this.shapes.indexOf(sideShape) == -1) {
@@ -100,8 +107,7 @@ class Physics {
     let sideTransform = new _ammo2.default.btTransform();
     sideTransform.setIdentity();
     let v = new _ammo2.default.btVector3(position.x, position.y, position.z);
-    sideTransform.setOrigin(v); //Ammo.destroy(v);
-
+    sideTransform.setOrigin(v);
     let quat = new _ammo2.default.btQuaternion();
     quat.setEulerZYX(rotation.z, rotation.y, rotation.x);
     sideTransform.setRotation(quat);
@@ -110,13 +116,7 @@ class Physics {
     if (isDynamic) sideShape.calculateLocalInertia(mass, localInertia);
     let myMotionState = new _ammo2.default.btDefaultMotionState(sideTransform);
     let rbInfo = new _ammo2.default.btRigidBodyConstructionInfo(mass, myMotionState, sideShape, localInertia);
-    let body = new _ammo2.default.btRigidBody(rbInfo); //Ammo.destroy()
-    //Ammo.destroy(quat);
-    //Ammo.destroy(localInertia);
-    //Ammo.destroy(rbInfo);
-    //Ammo.destroy(sideTransform);
-    //Ammo.destroy(body);
-
+    let body = new _ammo2.default.btRigidBody(rbInfo);
     body.setDamping(0, damping);
     body.setFriction(friction);
     body.setActivationState(4);
@@ -245,17 +245,14 @@ class Physics {
     let rot = state.rot;
     let trans = body.getWorldTransform();
     let o = new _ammo2.default.btVector3(pos.x, pos.y, pos.z);
-    trans.setOrigin(o); //Ammo.destory(o);
-
+    trans.setOrigin(o);
     let rows = rot;
     let matrix = new _ammo2.default.btMatrix3x3(rows[0].x, rows[0].y, rows[0].z, rows[1].x, rows[1].y, rows[1].z, rows[2].x, rows[2].y, rows[2].z);
-    trans.setBasis(matrix); //Ammo.destroy(matrix);
-
+    trans.setBasis(matrix);
     let v = new _ammo2.default.btVector3(aVel.x, aVel.y, aVel.z);
     let lv = new _ammo2.default.btVector3(lVel.x, lVel.y, lVel.z);
     body.setAngularVelocity(v);
-    body.setLinearVelocity(lv); //    Ammo.destroy(v);
-    //    Ammo.destroy(lv);
+    body.setLinearVelocity(lv);
   }
 
   getObjectState(body) {
@@ -369,6 +366,10 @@ class Physics {
         this.setConstraintState(this.constraints[state.index], state.state);
       }
     }
+  }
+
+  getStateManager() {
+    return this;
   }
 
   update(speed) {

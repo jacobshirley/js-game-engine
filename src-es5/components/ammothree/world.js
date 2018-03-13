@@ -16,14 +16,11 @@ let _trans = new _ammo2.default.btTransform(); // taking this out of the loop be
 class World {
   constructor(engine, renderer, physics) {
     this.objects = [];
-    this.stateManagers = [physics];
-    this.components = [];
+    this.components = [physics];
     this.renderTimer = engine.renderTimer;
     this.queue = engine.queue;
     this.renderer = renderer;
     this.physics = physics;
-    /*this.engine.on("restart", () => {
-      });*/
   }
 
   destroy() {
@@ -35,21 +32,29 @@ class World {
   getWorldState() {
     let states = [];
 
-    for (let sM of this.stateManagers) {
-      states.push(sM.state());
+    for (let comp of this.components) {
+      let sM = comp.getStateManager();
+      if (sM) states.push(sM.state());
     }
 
     return states;
   }
 
   setWorldState(state) {
-    for (let i = 0; i < state.length; i++) {
-      this.stateManagers[i].setState(state[i]);
+    let i = 0;
+
+    for (let comp of this.components) {
+      let sM = comp.getStateManager();
+
+      if (sM) {
+        sM.setState(state[i]);
+        i++;
+      }
     }
   }
 
-  addStateManager(stateManager) {
-    this.stateManagers.push(stateManager);
+  addComponent(component) {
+    this.components.push(component);
   }
 
   addObject(gameObj) {
